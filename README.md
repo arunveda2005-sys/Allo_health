@@ -1,5 +1,8 @@
 # Allo Inventory & Order-Fulfillment Platform (Take-Home)
 
+- **Live Production URL**: [https://allo-beta-two.vercel.app](https://allo-beta-two.vercel.app)
+- **GitHub Repository**: [https://github.com/arunveda2005-sys/Allo_health](https://github.com/arunveda2005-sys/Allo_health)
+
 Allo is a multi-warehouse retail and D2C inventory platform that resolves check-out race conditions using temporary reservations (holds) to avoid double-allocation, without tanking conversion rates on abandoned carts.
 
 This repository contains a **Next.js (App Router)** implementation using **Prisma + PostgreSQL** with database-enforced concurrency control, lazy-reclamation expiration sweep, client idempotency caching, and an interactive admin dashboard.

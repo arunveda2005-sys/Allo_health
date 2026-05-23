@@ -7,8 +7,8 @@
 }
 
 :root {
-  --background: #09090b;
-  --foreground: #f4f4f5;
+  --background: #F9F8FC;
+  --foreground: #09090b;
 }
 
 body {
@@ -26,14 +26,15 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: #F9F8FC;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #e4e4e7;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #d4d4d8;
 }
+

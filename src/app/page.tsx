@@ -53,6 +53,50 @@ interface LocalReservation {
   statusCode?: number;
 }
 
+interface FadeInProps {
+  children: React.ReactNode;
+  delay?: number;
+}
+
+function FadeIn({ children, delay = 0 }: FadeInProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const domRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.05 });
+
+    const currentTarget = domRef.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={domRef}
+      style={{ transitionDelay: `${delay}ms` }}
+      className={`transition-all duration-700 ease-out ${
+        isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-[0.97] pointer-events-none"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   // Products & Warehouse state
   const [products, setProducts] = useState<Product[]>([]);
@@ -613,35 +657,39 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
         {/* Zara Style Hero Editorial Banner */}
-        <div className="bg-[#EADEFF] rounded-3xl p-8 mb-8 border border-[#D9C4FA] relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
-          <div className="space-y-3.5 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#D2F53C] rounded-full text-[10px] font-bold uppercase tracking-wider text-black border border-[#BFDF33] shadow-sm">
-              ✨ Intimate health & daily vitality
+        <FadeIn>
+          <div className="bg-[#EADEFF] rounded-3xl p-8 mb-8 border border-[#D9C4FA] relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
+            <div className="space-y-3.5 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#D2F53C] rounded-full text-[10px] font-bold uppercase tracking-wider text-black border border-[#BFDF33] shadow-sm">
+                ✨ Intimate health & daily vitality
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-zinc-955 leading-tight">
+                We&apos;re securing inventory for your health.
+              </h1>
+              <p className="text-sm text-zinc-800 leading-relaxed font-medium">
+                Allo&apos;s fulfillment platform coordinates stock allocations dynamically across localized depots using database locks. Checkout holds expire in 10 minutes to maintain active inventory flow.
+              </p>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-zinc-955 leading-tight">
-              We&apos;re securing inventory for your health.
-            </h1>
-            <p className="text-sm text-zinc-800 leading-relaxed font-medium">
-              Allo&apos;s fulfillment platform coordinates stock allocations dynamically across localized depots using database locks. Checkout holds expire in 10 minutes to maintain active inventory flow.
-            </p>
+            <div className="flex flex-wrap gap-2.5 shrink-0">
+              <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">Intimate Care</span>
+              <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">At-Home Tests</span>
+              <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">Therapy</span>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2.5 shrink-0">
-            <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">Intimate Care</span>
-            <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">At-Home Tests</span>
-            <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">Therapy</span>
-          </div>
-        </div>
+        </FadeIn>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Left Side: Product Inventory Listing (8 Cols) */}
           <section className="lg:col-span-8 space-y-6">
-            <div>
-              <h2 className="text-2xl font-black text-zinc-950 tracking-tight">Active Stock Levels</h2>
-              <p className="text-sm text-zinc-500 mt-1 font-medium">
-                Real-time stock totals and active customer reservation holds across warehouses.
-              </p>
-            </div>
+            <FadeIn>
+              <div>
+                <h2 className="text-2xl font-black text-zinc-950 tracking-tight">Active Stock Levels</h2>
+                <p className="text-sm text-zinc-500 mt-1 font-medium">
+                  Real-time stock totals and active customer reservation holds across warehouses.
+                </p>
+              </div>
+            </FadeIn>
 
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -651,182 +699,183 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {products.map((product) => {
+                {products.map((product, idx) => {
                   const sku = product.sku;
                   const activeWhId = selectedWarehouse[sku];
                   const activeWhStock = product.stocks.find((s) => s.warehouseId === activeWhId);
                   const quantity = reserveQuantity[sku] || 1;
 
                   return (
-                    <div
-                      key={product.id}
-                      className="bg-white border border-zinc-100 rounded-3xl overflow-hidden hover:border-zinc-200 hover:shadow-md transition-all flex flex-col group relative"
-                    >
-                      {/* Price Tag Badge */}
-                      <div className="absolute top-4 right-4 bg-[#D2F53C] border border-[#BFDF33] text-black text-xs font-mono font-bold px-3.5 py-1 rounded-full shadow-sm z-10">
-                        ${product.price.toFixed(2)}
-                      </div>
-
-                      {/* Image / Banner */}
-                      <div className="h-52 bg-zinc-50 relative overflow-hidden flex items-center justify-center">
-                        {product.imageUrl ? (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="object-cover w-full h-full opacity-90 group-hover:scale-105 transition-all duration-500"
-                          />
-                        ) : (
-                          <Package className="h-12 w-12 text-zinc-300" />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent" />
-                      </div>
-
-                      {/* Metadata */}
-                      <div className="p-6 flex-1 flex flex-col">
-                        <div className="flex-1">
-                          <span className="text-[10px] font-bold tracking-wider text-purple-600 uppercase">
-                            SKU: {product.sku}
-                          </span>
-                          <h3 className="text-lg font-extrabold text-zinc-950 mt-1 group-hover:text-purple-700 transition-colors">
-                            {product.name}
-                          </h3>
-                          <p className="text-xs text-zinc-500 mt-2 line-clamp-2 leading-relaxed font-medium">
-                            {product.description || "No description provided."}
-                          </p>
-
-                          {/* Warehouses Stocks */}
-                          <div className="mt-5 space-y-3.5 border-t border-zinc-100 pt-4">
-                            <span className="text-xs font-bold text-zinc-800 block">Warehouse Allocation:</span>
-                            {product.stocks.map((stock) => {
-                              const available = stock.available;
-                              const isOut = available === 0;
-                              const isCritical = available > 0 && available <= 2;
-                              
-                              return (
-                                <div key={stock.warehouseId} className="space-y-1.5">
-                                  <div className="flex justify-between text-xs font-semibold">
-                                    <div className="flex items-center gap-1.5 text-zinc-600">
-                                      <WarehouseIcon className="h-3.5 w-3.5 text-purple-600" />
-                                      <span>{stock.warehouseName}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-zinc-500">
-                                      <span>Avail:</span>
-                                      <span className={`font-mono font-bold ${
-                                        isOut ? "text-rose-500" : isCritical ? "text-amber-500" : "text-emerald-600"
-                                      }`}>
-                                        {available}
-                                      </span>
-                                      <span className="text-zinc-300">/</span>
-                                      <span className="text-zinc-500 font-mono text-[10px]">{stock.total}</span>
-                                    </div>
-                                  </div>
-
-                                  {/* Stock progress bar */}
-                                  <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden flex">
-                                    <div
-                                      style={{ width: `${(stock.available / Math.max(1, stock.total)) * 100}%` }}
-                                      className={`h-full rounded-full transition-all ${
-                                        isOut 
-                                          ? "bg-rose-500" 
-                                          : isCritical 
-                                            ? "bg-amber-400" 
-                                            : "bg-[#D2F53C]"
-                                      }`}
-                                    />
-                                    {stock.reserved > 0 && (
-                                      <div
-                                        style={{ width: `${(stock.reserved / Math.max(1, stock.total)) * 100}%` }}
-                                        className="h-full bg-purple-400 opacity-60"
-                                        title={`${stock.reserved} units currently reserved`}
-                                      />
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                    <FadeIn key={product.id} delay={idx * 120}>
+                      <div
+                        className="bg-white border border-zinc-100 rounded-3xl overflow-hidden hover:border-zinc-200 hover:shadow-md transition-all flex flex-col group relative h-full"
+                      >
+                        {/* Price Tag Badge */}
+                        <div className="absolute top-4 right-4 bg-[#D2F53C] border border-[#BFDF33] text-black text-xs font-mono font-bold px-3.5 py-1 rounded-full shadow-sm z-10">
+                          ${product.price.toFixed(2)}
                         </div>
 
-                        {/* Checkout Simulation Controls */}
-                        <div className="mt-6 pt-5 border-t border-zinc-100 space-y-4">
-                          <div className="grid grid-cols-2 gap-3">
-                            {/* Warehouse Select */}
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">
-                                Checkout Wh
-                              </label>
-                              <select
-                                value={activeWhId || ""}
-                                onChange={(e) =>
-                                  setSelectedWarehouse((prev) => ({ ...prev, [sku]: e.target.value }))
-                                }
-                                className="w-full bg-zinc-50 border border-zinc-200 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-xs text-zinc-800 rounded-xl px-3 py-2.5 cursor-pointer font-bold transition-all"
-                              >
-                                {product.stocks.map((s) => (
-                                  <option key={s.warehouseId} value={s.warehouseId}>
-                                    {s.warehouseName}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
+                        {/* Image / Banner */}
+                        <div className="h-52 bg-zinc-50 relative overflow-hidden flex items-center justify-center">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="object-cover w-full h-full opacity-90 group-hover:scale-105 transition-all duration-500"
+                            />
+                          ) : (
+                            <Package className="h-12 w-12 text-zinc-300" />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent" />
+                        </div>
 
-                            {/* Quantity Selector */}
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">
-                                Quantity
-                              </label>
-                              <div className="flex bg-zinc-50 border border-zinc-200 rounded-xl overflow-hidden items-center justify-between">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setReserveQuantity((prev) => ({
-                                      ...prev,
-                                      [sku]: Math.max(1, (prev[sku] || 1) - 1),
-                                    }))
+                        {/* Metadata */}
+                        <div className="p-6 flex-1 flex flex-col">
+                          <div className="flex-1">
+                            <span className="text-[10px] font-bold tracking-wider text-purple-600 uppercase">
+                              SKU: {product.sku}
+                            </span>
+                            <h3 className="text-lg font-extrabold text-zinc-950 mt-1 group-hover:text-purple-700 transition-colors">
+                              {product.name}
+                            </h3>
+                            <p className="text-xs text-zinc-500 mt-2 line-clamp-2 leading-relaxed font-medium">
+                              {product.description || "No description provided."}
+                            </p>
+
+                            {/* Warehouses Stocks */}
+                            <div className="mt-5 space-y-3.5 border-t border-zinc-100 pt-4">
+                              <span className="text-xs font-bold text-zinc-800 block">Warehouse Allocation:</span>
+                              {product.stocks.map((stock) => {
+                                const available = stock.available;
+                                const isOut = available === 0;
+                                const isCritical = available > 0 && available <= 2;
+                                
+                                return (
+                                  <div key={stock.warehouseId} className="space-y-1.5">
+                                    <div className="flex justify-between text-xs font-semibold">
+                                      <div className="flex items-center gap-1.5 text-zinc-600">
+                                        <WarehouseIcon className="h-3.5 w-3.5 text-purple-600" />
+                                        <span>{stock.warehouseName}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1 text-zinc-500">
+                                        <span>Avail:</span>
+                                        <span className={`font-mono font-bold ${
+                                          isOut ? "text-rose-500" : isCritical ? "text-amber-500" : "text-emerald-600"
+                                        }`}>
+                                          {available}
+                                        </span>
+                                        <span className="text-zinc-300">/</span>
+                                        <span className="text-zinc-500 font-mono text-[10px]">{stock.total}</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Stock progress bar */}
+                                    <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden flex">
+                                      <div
+                                        style={{ width: `${(stock.available / Math.max(1, stock.total)) * 100}%` }}
+                                        className={`h-full rounded-full transition-all ${
+                                          isOut 
+                                            ? "bg-rose-500" 
+                                            : isCritical 
+                                              ? "bg-amber-400" 
+                                              : "bg-[#D2F53C]"
+                                        }`}
+                                      />
+                                      {stock.reserved > 0 && (
+                                        <div
+                                          style={{ width: `${(stock.reserved / Math.max(1, stock.total)) * 100}%` }}
+                                          className="h-full bg-purple-400 opacity-60"
+                                          title={`${stock.reserved} units currently reserved`}
+                                        />
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Checkout Simulation Controls */}
+                          <div className="mt-6 pt-5 border-t border-zinc-100 space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                              {/* Warehouse Select */}
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">
+                                  Checkout Wh
+                                </label>
+                                <select
+                                  value={activeWhId || ""}
+                                  onChange={(e) =>
+                                    setSelectedWarehouse((prev) => ({ ...prev, [sku]: e.target.value }))
                                   }
-                                  className="px-3 py-2 text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer font-bold"
+                                  className="w-full bg-zinc-50 border border-zinc-200 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-xs text-zinc-800 rounded-xl px-3 py-2.5 cursor-pointer font-bold transition-all"
                                 >
-                                  -
-                                </button>
-                                <span className="text-xs font-mono font-bold text-zinc-900 px-2">
-                                  {quantity}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setReserveQuantity((prev) => ({
-                                      ...prev,
-                                      [sku]: (prev[sku] || 1) + 1,
-                                    }))
-                                  }
-                                  className="px-3 py-2 text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer font-bold"
-                                >
-                                  +
-                                </button>
+                                  {product.stocks.map((s) => (
+                                    <option key={s.warehouseId} value={s.warehouseId}>
+                                      {s.warehouseName}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Quantity Selector */}
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">
+                                  Quantity
+                                </label>
+                                <div className="flex bg-zinc-50 border border-zinc-200 rounded-xl overflow-hidden items-center justify-between">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setReserveQuantity((prev) => ({
+                                        ...prev,
+                                        [sku]: Math.max(1, (prev[sku] || 1) - 1),
+                                      }))
+                                    }
+                                    className="px-3 py-2 text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer font-bold"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="text-xs font-mono font-bold text-zinc-900 px-2">
+                                    {quantity}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setReserveQuantity((prev) => ({
+                                        ...prev,
+                                        [sku]: (prev[sku] || 1) + 1,
+                                      }))
+                                    }
+                                    className="px-3 py-2 text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer font-bold"
+                                  >
+                                    +
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Reserve CTA */}
-                          <button
-                            onClick={() => handleReserve(product)}
-                            disabled={reservingSku === sku || !activeWhStock || activeWhStock.available === 0}
-                            className="w-full py-3.5 px-4 bg-zinc-950 hover:bg-zinc-900 disabled:bg-zinc-100 text-white disabled:text-zinc-400 text-xs font-bold rounded-2xl transition-all shadow-sm active:scale-[0.98] disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-                          >
-                            {reservingSku === sku ? (
-                              <RefreshCw className="h-4 w-4 animate-spin text-white" />
-                            ) : activeWhStock?.available === 0 ? (
-                              "Out of Stock"
-                            ) : (
-                              <>
-                                Proceed to Checkout
-                                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform text-[#D2F53C]" />
-                              </>
-                            )}
-                          </button>
+                            {/* Reserve CTA */}
+                            <button
+                              onClick={() => handleReserve(product)}
+                              disabled={reservingSku === sku || !activeWhStock || activeWhStock.available === 0}
+                              className="w-full py-3.5 px-4 bg-zinc-950 hover:bg-zinc-900 disabled:bg-zinc-100 text-white disabled:text-zinc-400 text-xs font-bold rounded-2xl transition-all shadow-sm active:scale-[0.98] disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              {reservingSku === sku ? (
+                                <RefreshCw className="h-4 w-4 animate-spin text-white" />
+                              ) : activeWhStock?.available === 0 ? (
+                                "Out of Stock"
+                              ) : (
+                                <>
+                                  Proceed to Checkout
+                                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform text-[#D2F53C]" />
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </FadeIn>
                   );
                 })}
               </div>
@@ -837,7 +886,8 @@ export default function Dashboard() {
           <aside className="lg:col-span-4 space-y-8">
             
             {/* Checkout Reservations Card */}
-            <div className="bg-[#F3EEFF] border border-[#E2D5FA] rounded-3xl p-6 shadow-sm space-y-6">
+            <FadeIn delay={200}>
+              <div className="bg-[#F3EEFF] border border-[#E2D5FA] rounded-3xl p-6 shadow-sm space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
@@ -984,9 +1034,11 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+            </FadeIn>
 
             {/* Verification Lab Console */}
-            <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-6">
+            <FadeIn delay={350}>
+              <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-6">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-full bg-[#EADEFF] flex items-center justify-center text-purple-600 border border-purple-200">
                   <Sparkles className="h-4 w-4" />
@@ -1111,6 +1163,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+            </FadeIn>
           </aside>
         </div>
       </main>

@@ -77,7 +77,7 @@ export default function Dashboard() {
   const [cleaningUp, setCleaningUp] = useState(false);
   const [seeding, setSeeding] = useState(false);
 
-  const consoleEndRef = useRef<HTMLDivElement>(null);
+  const consoleContainerRef = useRef<HTMLDivElement>(null);
 
   // Log message helper
   const addLog = (msg: string) => {
@@ -85,8 +85,8 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (consoleEndRef.current) {
-      consoleEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (consoleContainerRef.current) {
+      consoleContainerRef.current.scrollTop = consoleContainerRef.current.scrollHeight;
     }
   }, [consoleLogs]);
 
@@ -1060,7 +1060,10 @@ export default function Dashboard() {
             {/* Simulated terminal logging */}
             <div className="space-y-2">
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Terminal Outputs:</span>
-              <div className="bg-black border border-zinc-900 rounded-2xl p-4 h-48 overflow-y-auto font-mono text-[10px] text-zinc-400 space-y-1.5">
+              <div 
+                ref={consoleContainerRef}
+                className="bg-black border border-zinc-900 rounded-2xl p-4 h-48 overflow-y-auto font-mono text-[10px] text-zinc-400 space-y-1.5"
+              >
                 {consoleLogs.map((log, idx) => (
                   <div key={idx} className="leading-relaxed break-all">
                     {log.startsWith("[") ? (
@@ -1080,7 +1083,6 @@ export default function Dashboard() {
                     )}
                   </div>
                 ))}
-                <div ref={consoleEndRef} />
               </div>
             </div>
           </div>

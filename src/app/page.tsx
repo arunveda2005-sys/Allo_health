@@ -361,10 +361,10 @@ export default function Dashboard() {
   const runConcurrencyTest = async () => {
     if (products.length === 0) return;
     
-    // Find the wireless mouse (SKU: ALLO-MSE-003)
-    const mouse = products.find(p => p.sku === "ALLO-MSE-003");
+    // Find the at-home diagnostic kit (SKU: ALLO-HLTH-003)
+    const mouse = products.find(p => p.sku === "ALLO-HLTH-003");
     if (!mouse) {
-      addLog("Error: Could not find wireless mouse for concurrency test.");
+      addLog("Error: Could not find at-home diagnostic kit for concurrency test.");
       return;
     }
 
@@ -463,9 +463,9 @@ export default function Dashboard() {
   const runIdempotencyTest = async () => {
     if (products.length === 0) return;
     
-    const hoodie = products.find(p => p.sku === "ALLO-HD-002");
+    const hoodie = products.find(p => p.sku === "ALLO-HLTH-002");
     if (!hoodie) {
-      addLog("Error: Could not find developer hoodie for idempotency test.");
+      addLog("Error: Could not find daily vitality supplement for idempotency test.");
       return;
     }
 

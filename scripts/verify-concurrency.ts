@@ -21,14 +21,14 @@ async function runTest() {
   }
   const products = await res.json();
 
-  const mouse = products.find((p: any) => p.sku === "ALLO-MSE-003");
+  const mouse = products.find((p: any) => p.sku === "ALLO-HLTH-003");
   if (!mouse) {
-    throw new Error("Could not find wireless mouse in seeded products!");
+    throw new Error("Could not find at-home diagnostic kit in seeded products!");
   }
 
   const sfStock = mouse.stocks.find((s: any) => s.warehouseName === "San Francisco Hub");
   if (!sfStock) {
-    throw new Error("Could not find San Francisco Hub stock for the mouse!");
+    throw new Error("Could not find San Francisco Hub stock for the diagnostic kit!");
   }
 
   console.log(`Found Product: ${mouse.name} (${mouse.id})`);
@@ -46,7 +46,7 @@ async function runTest() {
       // Re-fetch products
       const pRes = await fetch(`${BASE_URL}/api/products`);
       const pData = await pRes.json();
-      const updatedMouse = pData.find((p: any) => p.sku === "ALLO-MSE-003");
+      const updatedMouse = pData.find((p: any) => p.sku === "ALLO-HLTH-003");
       const updatedSfStock = updatedMouse.stocks.find((s: any) => s.warehouseName === "San Francisco Hub");
       console.log(`Updated Available Stock: ${updatedSfStock.available}`);
     }

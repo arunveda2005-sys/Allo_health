@@ -21,14 +21,14 @@ async function runTest() {
   }
   const products = await res.json();
 
-  const hoodie = products.find((p: any) => p.sku === "ALLO-HD-002");
+  const hoodie = products.find((p: any) => p.sku === "ALLO-HLTH-002");
   if (!hoodie) {
-    throw new Error("Could not find developer hoodie in seeded products!");
+    throw new Error("Could not find daily vitality supplement in seeded products!");
   }
 
   const nyStock = hoodie.stocks.find((s: any) => s.warehouseName === "New York Depot");
   if (!nyStock) {
-    throw new Error("Could not find New York Depot stock for the hoodie!");
+    throw new Error("Could not find New York Depot stock for the supplement!");
   }
 
   console.log(`Found Product: ${hoodie.name} (${hoodie.id})`);

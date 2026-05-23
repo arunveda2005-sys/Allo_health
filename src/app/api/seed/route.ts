@@ -39,41 +39,41 @@ export async function POST() {
     // Create Products
     const mug = await prisma.product.create({
       data: {
-        name: "Allo Premium Ceramic Mug",
-        description: "A beautiful, minimalist matte black ceramic mug designed for developers. Ergonomic grip and keeps your coffee hot.",
-        sku: "ALLO-MUG-001",
-        price: 18.50,
-        imageUrl: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=300&auto=format&fit=crop",
+        name: "Allo Sexual Wellness Kit",
+        description: "A comprehensive, expert-curated wellness kit for intimate care, containing daily health guides and premium supplements.",
+        sku: "ALLO-HLTH-001",
+        price: 29.99,
+        imageUrl: "https://images.unsplash.com/photo-1611078489935-0cb964de46d6?q=80&w=300&auto=format&fit=crop",
       },
     });
 
     const hoodie = await prisma.product.create({
       data: {
-        name: "Allo Developer Hoodie",
-        description: "Ultra-soft cotton blend hoodie with hidden pockets and embroidered subtle branding. Perfect for long coding sessions.",
-        sku: "ALLO-HD-002",
-        price: 65.00,
-        imageUrl: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=300&auto=format&fit=crop",
+        name: "Allo Daily Vitality Supplement",
+        description: "Scientifically formulated daily natural supplements targeting energy boost, stress reduction, and hormonal balance.",
+        sku: "ALLO-HLTH-002",
+        price: 45.00,
+        imageUrl: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?q=80&w=300&auto=format&fit=crop",
       },
     });
 
     const mouse = await prisma.product.create({
       data: {
-        name: "Allo Precision Wireless Mouse",
-        description: "Ergonomic vertical wireless mouse with multi-device switching and customizable shortcut keys. Smooth tracking on all surfaces.",
-        sku: "ALLO-MSE-003",
+        name: "Allo At-Home Diagnostic Kit",
+        description: "Confidential, lab-verified health screening kit with pre-paid home pickup and secure digital results in 24 hours.",
+        sku: "ALLO-HLTH-003",
         price: 89.99,
-        imageUrl: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?q=80&w=300&auto=format&fit=crop",
+        imageUrl: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?q=80&w=300&auto=format&fit=crop",
       },
     });
 
     const kb = await prisma.product.create({
       data: {
-        name: "Allo Mechanical Keyboard (75%)",
-        description: "Hot-swappable tactile mechanical keyboard. RGB backlighting, dual-mode connectivity, and premium aluminum case.",
-        sku: "ALLO-KB-004",
-        price: 149.00,
-        imageUrl: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?q=80&w=300&auto=format&fit=crop",
+        name: "Allo Digital Therapy Journal",
+        description: "A structured wellness and mindfulness companion containing cognitive prompts and clinician-designed progress trackers.",
+        sku: "ALLO-HLTH-004",
+        price: 14.99,
+        imageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=300&auto=format&fit=crop",
       },
     });
 

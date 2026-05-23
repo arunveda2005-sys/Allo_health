@@ -578,20 +578,20 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-violet-600 selection:text-white pb-12">
+    <div className="min-h-screen bg-[#F9F8FC] text-zinc-900 font-sans selection:bg-[#D2F53C] selection:text-black pb-12">
       {/* Navbar Header */}
-      <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur sticky top-0 z-50">
+      <header className="border-b border-zinc-100 bg-white/80 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-violet-500/20">
+            <div className="h-10 w-10 rounded-full bg-[#D2F53C] flex items-center justify-center text-black border border-[#BEDD35] shadow-sm">
               <Package className="h-5 w-5" />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+              <span className="text-xl font-bold tracking-tight text-zinc-950">
                 Allo Fulfillment
               </span>
-              <span className="ml-2 px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded">
-                Console v1.0
+              <span className="ml-2 px-2.5 py-0.5 text-[9px] font-bold tracking-wide uppercase bg-purple-100 text-purple-800 rounded-full">
+                Console v2.0
               </span>
             </div>
           </div>
@@ -600,9 +600,9 @@ export default function Dashboard() {
             <button
               onClick={() => fetchProducts(true)}
               disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-zinc-700 hover:text-black border border-zinc-200 hover:border-zinc-300 bg-zinc-50 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-violet-400" : ""}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-purple-600" : ""}`} />
               Sync Inventory
             </button>
           </div>
@@ -610,483 +610,509 @@ export default function Dashboard() {
       </header>
 
       {/* Main Grid Workspace */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
-        {/* Left Side: Product Inventory Listing (8 Cols) */}
-        <section className="lg:col-span-8 space-y-6">
-          <div className="flex items-center justify-between">
+        {/* Zara Style Hero Editorial Banner */}
+        <div className="bg-[#EADEFF] rounded-3xl p-8 mb-8 border border-[#D9C4FA] relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
+          <div className="space-y-3.5 max-w-xl">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#D2F53C] rounded-full text-[10px] font-bold uppercase tracking-wider text-black border border-[#BFDF33] shadow-sm">
+              ✨ Intimate health & daily vitality
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-zinc-955 leading-tight">
+              We&apos;re securing inventory for your health.
+            </h1>
+            <p className="text-sm text-zinc-800 leading-relaxed font-medium">
+              Allo&apos;s fulfillment platform coordinates stock allocations dynamically across localized depots using database locks. Checkout holds expire in 10 minutes to maintain active inventory flow.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2.5 shrink-0">
+            <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">Intimate Care</span>
+            <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">At-Home Tests</span>
+            <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">Therapy</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* Left Side: Product Inventory Listing (8 Cols) */}
+          <section className="lg:col-span-8 space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Active Stock Levels</h2>
-              <p className="text-sm text-zinc-400 mt-1">
+              <h2 className="text-2xl font-black text-zinc-950 tracking-tight">Active Stock Levels</h2>
+              <p className="text-sm text-zinc-500 mt-1 font-medium">
                 Real-time stock totals and active customer reservation holds across warehouses.
               </p>
             </div>
-          </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[1, 2, 3, 4].map((n) => (
-                <div key={n} className="h-80 bg-zinc-900/30 border border-zinc-900 animate-pulse rounded-2xl" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {products.map((product) => {
-                const sku = product.sku;
-                const activeWhId = selectedWarehouse[sku];
-                const activeWhStock = product.stocks.find((s) => s.warehouseId === activeWhId);
-                const quantity = reserveQuantity[sku] || 1;
-
-                return (
-                  <div
-                    key={product.id}
-                    className="bg-zinc-900/40 border border-zinc-900 rounded-2xl overflow-hidden hover:border-zinc-800 transition-all flex flex-col group"
-                  >
-                    {/* Image / Banner */}
-                    <div className="h-44 bg-zinc-950 relative overflow-hidden flex items-center justify-center">
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="object-cover w-full h-full opacity-60 group-hover:scale-105 transition-all duration-500"
-                        />
-                      ) : (
-                        <Package className="h-12 w-12 text-zinc-700" />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent" />
-                      
-                      <div className="absolute top-4 right-4 bg-zinc-950/80 backdrop-blur border border-zinc-800 text-violet-400 text-sm font-mono font-bold px-3 py-1 rounded-full">
-                        ${product.price.toFixed(2)}
-                      </div>
-                    </div>
-
-                    {/* Metadata */}
-                    <div className="p-6 flex-1 flex flex-col">
-                      <div className="flex-1">
-                        <span className="text-[10px] font-mono font-semibold tracking-wider text-zinc-500 uppercase">
-                          SKU: {product.sku}
-                        </span>
-                        <h3 className="text-lg font-bold text-white mt-1 group-hover:text-violet-400 transition-colors">
-                          {product.name}
-                        </h3>
-                        <p className="text-xs text-zinc-400 mt-2 line-clamp-2 leading-relaxed">
-                          {product.description || "No description provided."}
-                        </p>
-
-                        {/* Warehouses Stocks */}
-                        <div className="mt-5 space-y-3.5 border-t border-zinc-900 pt-4">
-                          <span className="text-xs font-semibold text-zinc-300 block">Warehouse Allocation:</span>
-                          {product.stocks.map((stock) => {
-                            const available = stock.available;
-                            const isOut = available === 0;
-                            const isCritical = available > 0 && available <= 2;
-                            
-                            return (
-                              <div key={stock.warehouseId} className="space-y-1.5">
-                                <div className="flex justify-between text-xs font-medium">
-                                  <div className="flex items-center gap-1.5 text-zinc-400">
-                                    <WarehouseIcon className="h-3.5 w-3.5" />
-                                    <span>{stock.warehouseName}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-zinc-500">Avail:</span>
-                                    <span className={`font-mono font-bold ${
-                                      isOut ? "text-rose-500" : isCritical ? "text-amber-500" : "text-emerald-500"
-                                    }`}>
-                                      {available}
-                                    </span>
-                                    <span className="text-zinc-600">/</span>
-                                    <span className="text-zinc-500 font-mono text-[10px]">{stock.total}</span>
-                                  </div>
-                                </div>
-
-                                {/* Stock progress bar */}
-                                <div className="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden flex">
-                                  <div
-                                    style={{ width: `${(stock.available / Math.max(1, stock.total)) * 100}%` }}
-                                    className={`h-full rounded-full transition-all ${
-                                      isOut 
-                                        ? "bg-rose-500" 
-                                        : isCritical 
-                                          ? "bg-amber-500 animate-pulse" 
-                                          : "bg-emerald-500"
-                                    }`}
-                                  />
-                                  {stock.reserved > 0 && (
-                                    <div
-                                      style={{ width: `${(stock.reserved / Math.max(1, stock.total)) * 100}%` }}
-                                      className="h-full bg-violet-500 opacity-60"
-                                      title={`${stock.reserved} units currently reserved`}
-                                    />
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Checkout Simulation Controls */}
-                      <div className="mt-6 pt-5 border-t border-zinc-900 space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
-                          {/* Warehouse Select */}
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wide">
-                              Checkout Wh
-                            </label>
-                            <select
-                              value={activeWhId || ""}
-                              onChange={(e) =>
-                                setSelectedWarehouse((prev) => ({ ...prev, [sku]: e.target.value }))
-                              }
-                              className="w-full bg-zinc-950 border border-zinc-900 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 text-xs text-zinc-300 rounded-xl px-3 py-2 cursor-pointer font-medium"
-                            >
-                              {product.stocks.map((s) => (
-                                <option key={s.warehouseId} value={s.warehouseId}>
-                                  {s.warehouseName}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Quantity Selector */}
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wide">
-                              Quantity
-                            </label>
-                            <div className="flex bg-zinc-950 border border-zinc-900 rounded-xl overflow-hidden items-center justify-between">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setReserveQuantity((prev) => ({
-                                    ...prev,
-                                    [sku]: Math.max(1, (prev[sku] || 1) - 1),
-                                  }))
-                                }
-                                className="px-2.5 py-2 text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors cursor-pointer"
-                              >
-                                -
-                              </button>
-                              <span className="text-xs font-mono font-bold text-white px-2">
-                                {quantity}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setReserveQuantity((prev) => ({
-                                    ...prev,
-                                    [sku]: (prev[sku] || 1) + 1,
-                                  }))
-                                }
-                                className="px-2.5 py-2 text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors cursor-pointer"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Reserve CTA */}
-                        <button
-                          onClick={() => handleReserve(product)}
-                          disabled={reservingSku === sku || !activeWhStock || activeWhStock.available === 0}
-                          className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-zinc-900 disabled:to-zinc-900 text-white disabled:text-zinc-600 text-xs font-bold rounded-xl transition-all shadow-md shadow-violet-600/10 active:scale-[0.98] disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-                        >
-                          {reservingSku === sku ? (
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                          ) : activeWhStock?.available === 0 ? (
-                            "Out of Stock"
-                          ) : (
-                            <>
-                              Proceed to Checkout
-                              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Right Side: Active Holds Console & Testing Lab (4 Cols) */}
-        <aside className="lg:col-span-4 space-y-8">
-          
-          {/* Checkout Reservations Card */}
-          <div className="bg-zinc-900/50 border border-zinc-900 rounded-3xl p-6 backdrop-blur space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-violet-400" />
-                <h2 className="text-lg font-bold text-white">Active Checkout Holds</h2>
-              </div>
-              {localReservations.length > 0 && (
-                <button
-                  onClick={clearHoldHistory}
-                  className="text-[10px] font-bold text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer"
-                >
-                  Clear Logs
-                </button>
-              )}
-            </div>
-
-            {localReservations.length === 0 ? (
-              <div className="border border-dashed border-zinc-800 rounded-2xl py-12 px-6 text-center text-zinc-500">
-                <Clock className="h-8 w-8 mx-auto text-zinc-700 stroke-1 mb-3" />
-                <p className="text-xs font-medium">No active reservations.</p>
-                <p className="text-[10px] text-zinc-600 mt-1">
-                  Select a product and click &apos;Proceed to Checkout&apos; to trigger a 10-minute hold.
-                </p>
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4].map((n) => (
+                  <div key={n} className="h-80 bg-zinc-100 animate-pulse rounded-3xl border border-zinc-200" />
+                ))}
               </div>
             ) : (
-              <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
-                {localReservations.map((hold) => {
-                  const isPending = hold.status === "PENDING";
-                  const isConfirmed = hold.status === "CONFIRMED";
-                  const isReleased = hold.status === "RELEASED";
-                  const isExpired = hold.status === "EXPIRED";
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {products.map((product) => {
+                  const sku = product.sku;
+                  const activeWhId = selectedWarehouse[sku];
+                  const activeWhStock = product.stocks.find((s) => s.warehouseId === activeWhId);
+                  const quantity = reserveQuantity[sku] || 1;
 
                   return (
                     <div
-                      key={hold.id}
-                      className={`border rounded-2xl p-4 transition-all ${
-                        isConfirmed
-                          ? "bg-emerald-950/10 border-emerald-950/40 text-emerald-300"
-                          : isReleased
-                            ? "bg-zinc-900/20 border-zinc-900 text-zinc-500"
-                            : isExpired
-                              ? "bg-rose-950/10 border-rose-950/20 text-rose-400"
-                              : "bg-zinc-900/70 border-zinc-800 text-zinc-100"
-                      }`}
+                      key={product.id}
+                      className="bg-white border border-zinc-100 rounded-3xl overflow-hidden hover:border-zinc-200 hover:shadow-md transition-all flex flex-col group relative"
                     >
-                      <div className="flex justify-between items-start gap-2">
-                        <div>
-                          <span className="text-[9px] font-mono uppercase bg-zinc-950 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded">
-                            Hold: {hold.id.substring(0, 8)}
-                          </span>
-                          <h4 className="text-sm font-bold text-white mt-2 leading-tight">
-                            {hold.productName}
-                          </h4>
-                          <p className="text-[10px] text-zinc-400 mt-1 flex items-center gap-1">
-                            <WarehouseIcon className="h-3 w-3 inline text-zinc-500" />
-                            {hold.warehouseName}
-                          </p>
-                          <p className="text-xs font-semibold mt-1">
-                            Quantity Reserved: <span className="font-mono text-white">{hold.quantity}</span>
-                          </p>
-                        </div>
-
-                        {/* Status Badge & Circular Timer */}
-                        <div className="flex flex-col items-end gap-2">
-                          {isPending && (
-                            <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
-                              {getCountdownText(hold.expiresAt)}
-                            </div>
-                          )}
-
-                          {isConfirmed && (
-                            <div className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                              <CheckCircle className="h-3.5 w-3.5" />
-                              Paid
-                            </div>
-                          )}
-
-                          {isReleased && (
-                            <div className="flex items-center gap-1 bg-zinc-800 border border-zinc-700 text-zinc-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                              <XCircle className="h-3.5 w-3.5" />
-                              Released
-                            </div>
-                          )}
-
-                          {isExpired && (
-                            <div className="flex items-center gap-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                              <AlertCircle className="h-3.5 w-3.5" />
-                              Expired
-                            </div>
-                          )}
-                        </div>
+                      {/* Price Tag Badge */}
+                      <div className="absolute top-4 right-4 bg-[#D2F53C] border border-[#BFDF33] text-black text-xs font-mono font-bold px-3.5 py-1 rounded-full shadow-sm z-10">
+                        ${product.price.toFixed(2)}
                       </div>
 
-                      {/* Display exact Errors from Server if they happen */}
-                      {hold.errorMsg && (
-                        <div className="mt-3 bg-rose-500/5 border border-rose-500/10 rounded-xl p-2.5 flex items-start gap-1.5 text-[10px] text-rose-400">
-                          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                          <div>
-                            <span className="font-bold">Error {hold.statusCode}:</span> {hold.errorMsg}
+                      {/* Image / Banner */}
+                      <div className="h-52 bg-zinc-50 relative overflow-hidden flex items-center justify-center">
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="object-cover w-full h-full opacity-90 group-hover:scale-105 transition-all duration-500"
+                          />
+                        ) : (
+                          <Package className="h-12 w-12 text-zinc-300" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent" />
+                      </div>
+
+                      {/* Metadata */}
+                      <div className="p-6 flex-1 flex flex-col">
+                        <div className="flex-1">
+                          <span className="text-[10px] font-bold tracking-wider text-purple-600 uppercase">
+                            SKU: {product.sku}
+                          </span>
+                          <h3 className="text-lg font-extrabold text-zinc-950 mt-1 group-hover:text-purple-700 transition-colors">
+                            {product.name}
+                          </h3>
+                          <p className="text-xs text-zinc-500 mt-2 line-clamp-2 leading-relaxed font-medium">
+                            {product.description || "No description provided."}
+                          </p>
+
+                          {/* Warehouses Stocks */}
+                          <div className="mt-5 space-y-3.5 border-t border-zinc-100 pt-4">
+                            <span className="text-xs font-bold text-zinc-800 block">Warehouse Allocation:</span>
+                            {product.stocks.map((stock) => {
+                              const available = stock.available;
+                              const isOut = available === 0;
+                              const isCritical = available > 0 && available <= 2;
+                              
+                              return (
+                                <div key={stock.warehouseId} className="space-y-1.5">
+                                  <div className="flex justify-between text-xs font-semibold">
+                                    <div className="flex items-center gap-1.5 text-zinc-600">
+                                      <WarehouseIcon className="h-3.5 w-3.5 text-purple-600" />
+                                      <span>{stock.warehouseName}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-zinc-500">
+                                      <span>Avail:</span>
+                                      <span className={`font-mono font-bold ${
+                                        isOut ? "text-rose-500" : isCritical ? "text-amber-500" : "text-emerald-600"
+                                      }`}>
+                                        {available}
+                                      </span>
+                                      <span className="text-zinc-300">/</span>
+                                      <span className="text-zinc-500 font-mono text-[10px]">{stock.total}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Stock progress bar */}
+                                  <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden flex">
+                                    <div
+                                      style={{ width: `${(stock.available / Math.max(1, stock.total)) * 100}%` }}
+                                      className={`h-full rounded-full transition-all ${
+                                        isOut 
+                                          ? "bg-rose-500" 
+                                          : isCritical 
+                                            ? "bg-amber-400" 
+                                            : "bg-[#D2F53C]"
+                                      }`}
+                                    />
+                                    {stock.reserved > 0 && (
+                                      <div
+                                        style={{ width: `${(stock.reserved / Math.max(1, stock.total)) * 100}%` }}
+                                        className="h-full bg-purple-400 opacity-60"
+                                        title={`${stock.reserved} units currently reserved`}
+                                      />
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      )}
 
-                      {/* Actions */}
-                      {isPending && (
-                        <div className="mt-4 grid grid-cols-2 gap-2">
+                        {/* Checkout Simulation Controls */}
+                        <div className="mt-6 pt-5 border-t border-zinc-100 space-y-4">
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* Warehouse Select */}
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">
+                                Checkout Wh
+                              </label>
+                              <select
+                                value={activeWhId || ""}
+                                onChange={(e) =>
+                                  setSelectedWarehouse((prev) => ({ ...prev, [sku]: e.target.value }))
+                                }
+                                className="w-full bg-zinc-50 border border-zinc-200 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-xs text-zinc-800 rounded-xl px-3 py-2.5 cursor-pointer font-bold transition-all"
+                              >
+                                {product.stocks.map((s) => (
+                                  <option key={s.warehouseId} value={s.warehouseId}>
+                                    {s.warehouseName}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Quantity Selector */}
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">
+                                Quantity
+                              </label>
+                              <div className="flex bg-zinc-50 border border-zinc-200 rounded-xl overflow-hidden items-center justify-between">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setReserveQuantity((prev) => ({
+                                      ...prev,
+                                      [sku]: Math.max(1, (prev[sku] || 1) - 1),
+                                    }))
+                                  }
+                                  className="px-3 py-2 text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer font-bold"
+                                >
+                                  -
+                                </button>
+                                <span className="text-xs font-mono font-bold text-zinc-900 px-2">
+                                  {quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setReserveQuantity((prev) => ({
+                                      ...prev,
+                                      [sku]: (prev[sku] || 1) + 1,
+                                    }))
+                                  }
+                                  className="px-3 py-2 text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer font-bold"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Reserve CTA */}
                           <button
-                            onClick={() => handleConfirm(hold)}
-                            disabled={actionLoading === hold.id}
-                            className="py-2 px-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 text-white disabled:text-zinc-600 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-emerald-700/10"
+                            onClick={() => handleReserve(product)}
+                            disabled={reservingSku === sku || !activeWhStock || activeWhStock.available === 0}
+                            className="w-full py-3.5 px-4 bg-zinc-950 hover:bg-zinc-900 disabled:bg-zinc-100 text-white disabled:text-zinc-400 text-xs font-bold rounded-2xl transition-all shadow-sm active:scale-[0.98] disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
                           >
-                            {actionLoading === hold.id ? (
-                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            {reservingSku === sku ? (
+                              <RefreshCw className="h-4 w-4 animate-spin text-white" />
+                            ) : activeWhStock?.available === 0 ? (
+                              "Out of Stock"
                             ) : (
-                              "Pay Now"
+                              <>
+                                Proceed to Checkout
+                                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform text-[#D2F53C]" />
+                              </>
                             )}
                           </button>
-                          <button
-                            onClick={() => handleRelease(hold)}
-                            disabled={actionLoading === hold.id}
-                            className="py-2 px-3 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-800 text-zinc-300 hover:text-white disabled:text-zinc-600 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 border border-zinc-700"
-                          >
-                            Cancel Hold
-                          </button>
                         </div>
-                      )}
-
-                      {/* Clean up logs from UI button */}
-                      {(isConfirmed || isReleased || isExpired) && (
-                        <div className="mt-3 flex justify-end">
-                          <button
-                            onClick={() => deleteFromUI(hold.id)}
-                            className="text-[9px] font-semibold text-zinc-500 hover:text-zinc-300 cursor-pointer"
-                          >
-                            Remove Card
-                          </button>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Verification Lab Console */}
-          <div className="bg-zinc-900/50 border border-zinc-900 rounded-3xl p-6 backdrop-blur space-y-6">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-violet-400" />
-              <h2 className="text-lg font-bold text-white">Concurrency & Testing Lab</h2>
+          {/* Right Side: Active Holds Console & Testing Lab (4 Cols) */}
+          <aside className="lg:col-span-4 space-y-8">
+            
+            {/* Checkout Reservations Card */}
+            <div className="bg-[#F3EEFF] border border-[#E2D5FA] rounded-3xl p-6 shadow-sm space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
+                    <ShoppingCart className="h-4 w-4" />
+                  </div>
+                  <h2 className="text-md font-extrabold text-purple-950">Active Holds</h2>
+                </div>
+                {localReservations.length > 0 && (
+                  <button
+                    onClick={clearHoldHistory}
+                    className="text-[10px] font-bold text-purple-600 hover:text-rose-600 transition-colors cursor-pointer"
+                  >
+                    Clear Logs
+                  </button>
+                )}
+              </div>
+
+              {localReservations.length === 0 ? (
+                <div className="border border-dashed border-[#DFD1FB] rounded-2xl py-12 px-6 text-center text-purple-500/80 bg-white/40">
+                  <Clock className="h-8 w-8 mx-auto text-purple-400 stroke-1 mb-3 animate-pulse" />
+                  <p className="text-xs font-bold">No active reservations.</p>
+                  <p className="text-[10px] text-purple-600 mt-2 leading-relaxed">
+                    Select a product and click &apos;Proceed to Checkout&apos; to trigger a 10-minute hold.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
+                  {localReservations.map((hold) => {
+                    const isPending = hold.status === "PENDING";
+                    const isConfirmed = hold.status === "CONFIRMED";
+                    const isReleased = hold.status === "RELEASED";
+                    const isExpired = hold.status === "EXPIRED";
+
+                    return (
+                      <div
+                        key={hold.id}
+                        className={`border rounded-2xl p-4 transition-all shadow-sm ${
+                          isConfirmed
+                            ? "bg-emerald-50/50 border-emerald-200/50 text-emerald-800"
+                            : isReleased
+                              ? "bg-zinc-50/50 border-zinc-200 text-zinc-500"
+                              : isExpired
+                                ? "bg-rose-50/50 border-rose-200/50 text-rose-800"
+                                : "bg-white border-purple-200/80 text-zinc-800"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <div>
+                            <span className="text-[9px] font-mono font-bold uppercase bg-zinc-100 border border-zinc-200 text-zinc-600 px-2 py-0.5 rounded">
+                              Hold: {hold.id.substring(0, 8)}
+                            </span>
+                            <h4 className="text-sm font-extrabold text-zinc-950 mt-2.5 leading-tight">
+                              {hold.productName}
+                            </h4>
+                            <p className="text-[10px] text-zinc-500 mt-1 flex items-center gap-1 font-semibold">
+                              <WarehouseIcon className="h-3 w-3 inline text-purple-600" />
+                              {hold.warehouseName}
+                            </p>
+                            <p className="text-xs font-bold mt-1 text-zinc-700">
+                              Quantity: <span className="font-mono text-purple-600">{hold.quantity}</span>
+                            </p>
+                          </div>
+
+                          {/* Status Badge & Circular Timer */}
+                          <div className="flex flex-col items-end gap-2">
+                            {isPending && (
+                              <div className="flex items-center gap-1.5 bg-amber-5 border border-amber-200 text-amber-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
+                                {getCountdownText(hold.expiresAt)}
+                              </div>
+                            )}
+
+                            {isConfirmed && (
+                              <div className="flex items-center gap-1 bg-emerald-5 border border-emerald-200 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                                <CheckCircle className="h-3.5 w-3.5" />
+                                Paid
+                              </div>
+                            )}
+
+                            {isReleased && (
+                              <div className="flex items-center gap-1 bg-zinc-100 border border-zinc-200 text-zinc-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                                <XCircle className="h-3.5 w-3.5" />
+                                Released
+                              </div>
+                            )}
+
+                            {isExpired && (
+                              <div className="flex items-center gap-1 bg-rose-5 border border-rose-200 text-rose-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                                <AlertCircle className="h-3.5 w-3.5" />
+                                Expired
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Display exact Errors from Server if they happen */}
+                        {hold.errorMsg && (
+                          <div className="mt-3 bg-rose-5 border border-rose-100 rounded-xl p-2.5 flex items-start gap-1.5 text-[10px] text-rose-700 font-medium leading-relaxed">
+                            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-rose-600" />
+                            <div>
+                              <span className="font-bold">Error {hold.statusCode}:</span> {hold.errorMsg}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        {isPending && (
+                          <div className="mt-4 grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => handleConfirm(hold)}
+                              disabled={actionLoading === hold.id}
+                              className="py-2.5 px-3 bg-[#D2F53C] hover:bg-[#C2DF32] disabled:bg-zinc-100 text-black disabled:text-zinc-400 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 shadow-sm border border-[#BFDF33]"
+                            >
+                              {actionLoading === hold.id ? (
+                                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                "Pay Now"
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleRelease(hold)}
+                              disabled={actionLoading === hold.id}
+                              className="py-2.5 px-3 bg-zinc-100 hover:bg-zinc-200 disabled:bg-zinc-100 text-zinc-700 hover:text-black disabled:text-zinc-400 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 border border-zinc-200 shadow-sm"
+                            >
+                              Cancel Hold
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Clean up logs from UI button */}
+                        {(isConfirmed || isReleased || isExpired) && (
+                          <div className="mt-3 flex justify-end">
+                            <button
+                              onClick={() => deleteFromUI(hold.id)}
+                              className="text-[9px] font-bold text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                            >
+                              Remove Card
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            <div className="space-y-3.5">
-              {/* Concurrency Simulator */}
-              <div className="space-y-1">
-                <button
-                  onClick={runConcurrencyTest}
-                  disabled={testingConcurrency || refreshing || loading}
-                  className="w-full py-2.5 px-4 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-600 text-violet-400 disabled:border-zinc-900 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  {testingConcurrency ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      Testing Race Conditions...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-3.5 w-3.5" />
-                      Test Concurrency (10 requests)
-                    </>
-                  )}
-                </button>
-                <p className="text-[10px] text-zinc-500 leading-normal px-1">
-                  Fires 10 concurrent requests to reserve the last unit of the Wireless Mouse at SF Hub. Under concurrency, exactly 1 should get 201, and 9 should get 409.
-                </p>
+            {/* Verification Lab Console */}
+            <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-6">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-[#EADEFF] flex items-center justify-center text-purple-600 border border-purple-200">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <h2 className="text-md font-extrabold text-zinc-950">Concurrency Lab</h2>
               </div>
 
-              {/* Idempotency Simulator */}
-              <div className="space-y-1 pt-2">
-                <button
-                  onClick={runIdempotencyTest}
-                  disabled={testingIdempotency || refreshing || loading}
-                  className="w-full py-2.5 px-4 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 disabled:bg-zinc-900 disabled:text-zinc-600 text-violet-400 disabled:border-zinc-900 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  {testingIdempotency ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      Testing Idempotency...
-                    </>
-                  ) : (
-                    <>
-                      <Key className="h-3.5 w-3.5" />
-                      Test Idempotency-Key
-                    </>
-                  )}
-                </button>
-                <p className="text-[10px] text-zinc-500 leading-normal px-1">
-                  Sends two simultaneous requests with an identical Idempotency-Key. Verifies that only one side-effect is recorded and both receive matching responses.
-                </p>
-              </div>
-
-              {/* Database Cron and Utilities */}
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <button
-                  onClick={triggerManualSweep}
-                  disabled={cleaningUp}
-                  className="py-2.5 px-3 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <Clock className="h-3.5 w-3.5 text-amber-500" />
-                  Sweep Expirations
-                </button>
-                <button
-                  onClick={async () => {
-                    setSeeding(true);
-                    addLog("Triggering database re-seed...");
-                    try {
-                      const res = await fetch("/api/seed", { method: "POST" });
-                      const data = await res.json();
-                      if (res.ok) {
-                        addLog("✅ Database seeded successfully!");
-                        saveReservations([]);
-                        await fetchProducts(true);
-                      } else {
-                        addLog("❌ Seeding failed: " + (data.error || "Unknown error"));
-                      }
-                    } catch (err: any) {
-                      addLog("❌ Network error during seeding: " + err.message);
-                    } finally {
-                      setSeeding(false);
-                    }
-                  }}
-                  disabled={seeding}
-                  className="py-2.5 px-3 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <Database className="h-3.5 w-3.5 text-blue-500" />
-                  Seed Database
-                </button>
-              </div>
-            </div>
-
-            {/* Simulated terminal logging */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Terminal Outputs:</span>
-              <div 
-                ref={consoleContainerRef}
-                className="bg-black border border-zinc-900 rounded-2xl p-4 h-48 overflow-y-auto font-mono text-[10px] text-zinc-400 space-y-1.5"
-              >
-                {consoleLogs.map((log, idx) => (
-                  <div key={idx} className="leading-relaxed break-all">
-                    {log.startsWith("[") ? (
+              <div className="space-y-3.5">
+                {/* Concurrency Simulator */}
+                <div className="space-y-1">
+                  <button
+                    onClick={runConcurrencyTest}
+                    disabled={testingConcurrency || refreshing || loading}
+                    className="w-full py-3 px-4 bg-zinc-950 hover:bg-zinc-900 disabled:bg-zinc-100 disabled:text-zinc-400 text-[#D2F53C] disabled:border-zinc-200 text-xs font-bold rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    {testingConcurrency ? (
                       <>
-                        <span className="text-zinc-600">{log.substring(0, 10)}</span>
-                        <span className={
-                          log.includes("✅") ? "text-emerald-400" :
-                          log.includes("❌") ? "text-rose-400" :
-                          log.includes("successful") ? "text-violet-400" :
-                          log.includes("expired") ? "text-amber-400" : "text-zinc-300"
-                        }>
-                          {log.substring(10)}
-                        </span>
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin text-white" />
+                        Testing Race Conditions...
                       </>
                     ) : (
-                      log
+                      <>
+                        <Play className="h-3.5 w-3.5" />
+                        Test Concurrency (10 requests)
+                      </>
                     )}
-                  </div>
-                ))}
+                  </button>
+                  <p className="text-[10px] text-zinc-500 leading-normal px-1 font-semibold pt-1">
+                    Fires 10 concurrent requests to reserve the last unit of the At-Home Diagnostic Kit at SF Hub. Under concurrency, exactly 1 should get 201, and 9 should get 409.
+                  </p>
+                </div>
+
+                {/* Idempotency Simulator */}
+                <div className="space-y-1 pt-2">
+                  <button
+                    onClick={runIdempotencyTest}
+                    disabled={testingIdempotency || refreshing || loading}
+                    className="w-full py-3 px-4 bg-white hover:bg-zinc-50 border border-zinc-300 hover:border-zinc-400 disabled:bg-zinc-100 disabled:text-zinc-400 text-zinc-800 disabled:border-zinc-200 text-xs font-bold rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    {testingIdempotency ? (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin text-purple-600" />
+                        Testing Idempotency...
+                      </>
+                    ) : (
+                      <>
+                        <Key className="h-3.5 w-3.5 text-purple-600" />
+                        Test Idempotency-Key
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[10px] text-zinc-500 leading-normal px-1 font-semibold pt-1">
+                    Sends two simultaneous requests with an identical Idempotency-Key. Verifies that only one side-effect is recorded and both receive matching responses.
+                  </p>
+                </div>
+
+                {/* Database Cron and Utilities */}
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button
+                    onClick={triggerManualSweep}
+                    disabled={cleaningUp}
+                    className="py-2.5 px-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 hover:text-black text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <Clock className="h-3.5 w-3.5 text-amber-500" />
+                    Sweep Expirations
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setSeeding(true);
+                      addLog("Triggering database re-seed...");
+                      try {
+                        const res = await fetch("/api/seed", { method: "POST" });
+                        const data = await res.json();
+                        if (res.ok) {
+                          addLog("✅ Database seeded successfully!");
+                          saveReservations([]);
+                          await fetchProducts(true);
+                        } else {
+                          addLog("❌ Seeding failed: " + (data.error || "Unknown error"));
+                        }
+                      } catch (err: any) {
+                        addLog("❌ Network error during seeding: " + err.message);
+                      } finally {
+                        setSeeding(false);
+                      }
+                    }}
+                    disabled={seeding}
+                    className="py-2.5 px-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 hover:text-black text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <Database className="h-3.5 w-3.5 text-blue-500" />
+                    Seed Database
+                  </button>
+                </div>
+              </div>
+
+              {/* Simulated terminal logging */}
+              <div className="space-y-2">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Terminal Outputs:</span>
+                <div 
+                  ref={consoleContainerRef}
+                  className="bg-[#18181B] border border-zinc-900 rounded-2xl p-4 h-48 overflow-y-auto font-mono text-[10px] text-zinc-300 space-y-1.5 shadow-inner"
+                >
+                  {consoleLogs.map((log, idx) => (
+                    <div key={idx} className="leading-relaxed break-all">
+                      {log.startsWith("[") ? (
+                        <>
+                          <span className="text-zinc-500">{log.substring(0, 10)}</span>
+                          <span className={
+                            log.includes("✅") ? "text-emerald-400 font-bold" :
+                            log.includes("❌") ? "text-rose-400 font-bold" :
+                            log.includes("successful") ? "text-[#D2F53C] font-semibold" :
+                            log.includes("expired") ? "text-amber-400" : "text-zinc-100"
+                          }>
+                            {log.substring(10)}
+                          </span>
+                        </>
+                      ) : (
+                        log
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </aside>
+          </aside>
+        </div>
       </main>
     </div>
   );

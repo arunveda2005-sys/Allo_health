@@ -1,6 +1,6 @@
 # Allo Inventory & Order-Fulfillment Platform (Take-Home)
 
-- **Live Production URL**: [https://allo-beta-two.vercel.app](https://allo-beta-two.vercel.app)
+- **Live Production URL**: [https://allo-health-arun.vercel.app](https://allo-health-arun.vercel.app)
 - **GitHub Repository**: [https://github.com/arunveda2005-sys/Allo_health](https://github.com/arunveda2005-sys/Allo_health)
 
 Allo is a multi-warehouse retail and D2C inventory platform that resolves check-out race conditions using temporary reservations (holds) to avoid double-allocation, without tanking conversion rates on abandoned carts.

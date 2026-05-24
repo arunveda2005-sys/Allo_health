@@ -989,10 +989,8 @@ export default function AlloHealthDashboard() {
                                   <div
                                     style={{ width: `${(item.duration / maxConcurrencyDuration) * 100}%` }}
                                     className={`h-full rounded-r transition-all duration-500 flex items-center pl-1.5 ${
-                                      item.status === 201 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.25)]" : "bg-rose-450"
+                                      item.status === 201 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.25)]" : "bg-rose-450 opacity-80"
                                     }`}
-                                    // Use rose color for conflicts
-                                    className={`h-full rounded-r transition-all duration-500 ${item.status === 201 ? "bg-emerald-500 shadow" : "bg-rose-450 opacity-80"}`}
                                   />
                                 </div>
                                 <span className={`w-14 text-right font-mono ${item.status === 201 ? "text-emerald-600 font-bold" : "text-rose-500"}`}>

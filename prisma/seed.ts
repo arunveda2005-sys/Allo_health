@@ -13,106 +13,125 @@ async function main() {
   await prisma.idempotencyKey.deleteMany();
 
   // Create Warehouses
-  const sf = await prisma.warehouse.create({
+  const blr = await prisma.warehouse.create({
     data: {
-      name: "San Francisco Hub",
-      location: "San Francisco, CA",
+      name: "Indiranagar Fulfillment Hub",
+      location: "Bangalore, KA",
     },
   });
 
-  const ny = await prisma.warehouse.create({
+  const hyd = await prisma.warehouse.create({
     data: {
-      name: "New York Depot",
-      location: "Brooklyn, NY",
+      name: "Banjara Hills Dispatch Centre",
+      location: "Hyderabad, TS",
     },
   });
 
-  const chi = await prisma.warehouse.create({
+  const mum = await prisma.warehouse.create({
     data: {
-      name: "Chicago Center",
-      location: "Chicago, IL",
+      name: "Borivali Fulfillment Centre",
+      location: "Mumbai, MH",
     },
   });
 
   console.log("Warehouses created.");
 
   // Create Products
-  const mug = await prisma.product.create({
+  const eroxon = await prisma.product.create({
     data: {
-      name: "Allo Sexual Wellness Kit",
-      description: "A comprehensive, expert-curated wellness kit for intimate care, containing daily health guides and premium supplements.",
-      sku: "ALLO-HLTH-001",
-      price: 29.99,
-      imageUrl: "https://images.unsplash.com/photo-1611078489935-0cb964de46d6?q=80&w=300&auto=format&fit=crop",
+      name: "Eroxon Topical Gel (ED)",
+      description: "Fast-acting topical gel treatment for erectile dysfunction. Clinically proven to help achieve an erection within 10 minutes.",
+      sku: "ALO-001",
+      price: 999.00,
+      imageUrl: "https://images.unsplash.com/photo-1550572017-edd951b55104?q=80&w=300&auto=format&fit=crop",
     },
   });
 
-  const hoodie = await prisma.product.create({
+  const testKit = await prisma.product.create({
     data: {
-      name: "Allo Daily Vitality Supplement",
-      description: "Scientifically formulated daily natural supplements targeting energy boost, stress reduction, and hormonal balance.",
-      sku: "ALLO-HLTH-002",
-      price: 45.00,
-      imageUrl: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?q=80&w=300&auto=format&fit=crop",
+      name: "Testosterone Test Kit (Home)",
+      description: "Easy-to-use, lab-verified home blood collection kit measuring total testosterone levels with secure, discreet digital results.",
+      sku: "ALO-002",
+      price: 1499.00,
+      imageUrl: "https://images.unsplash.com/photo-1619014029026-b1fd7551aa12?q=80&w=300&auto=format&fit=crop",
     },
   });
 
-  const mouse = await prisma.product.create({
+  const tadalafil = await prisma.product.create({
     data: {
-      name: "Allo At-Home Diagnostic Kit",
-      description: "Confidential, lab-verified health screening kit with pre-paid home pickup and secure digital results in 24 hours.",
-      sku: "ALLO-HLTH-003",
-      price: 89.99,
-      imageUrl: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?q=80&w=300&auto=format&fit=crop",
+      name: "Tadalafil 10mg Strip (10 tabs)",
+      description: "Prescription ED medication strip. Helps increase blood flow to specific areas for sustained performance and treatment.",
+      sku: "ALO-003",
+      price: 799.00,
+      imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=300&auto=format&fit=crop",
     },
   });
 
-  const kb = await prisma.product.create({
+  const dapoxetine = await prisma.product.create({
     data: {
-      name: "Allo Digital Therapy Journal",
-      description: "A structured wellness and mindfulness companion containing cognitive prompts and clinician-designed progress trackers.",
-      sku: "ALLO-HLTH-004",
-      price: 14.99,
-      imageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=300&auto=format&fit=crop",
+      name: "Dapoxetine 30mg Strip (PE)",
+      description: "Clinically approved PE medication strip designed to improve control and prolong performance significantly.",
+      sku: "ALO-004",
+      price: 649.00,
+      imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=300&auto=format&fit=crop",
+    },
+  });
+
+  const libidoBoost = await prisma.product.create({
+    data: {
+      name: "Libido Boost Supplement",
+      description: "Daily natural wellness supplement targeting stress reduction, stamina improvement, and hormonal vitality.",
+      sku: "ALO-005",
+      price: 1199.00,
+      imageUrl: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?q=80&w=300&auto=format&fit=crop",
     },
   });
 
   console.log("Products created.");
 
   // Create Stocks
-  // Mug stocks
+  // Eroxon stocks
   await prisma.stock.createMany({
     data: [
-      { productId: mug.id, warehouseId: sf.id, total: 15, reserved: 0 },
-      { productId: mug.id, warehouseId: ny.id, total: 20, reserved: 0 },
-      { productId: mug.id, warehouseId: chi.id, total: 0, reserved: 0 }, // Out of stock
+      { productId: eroxon.id, warehouseId: blr.id, total: 15, reserved: 0 },
+      { productId: eroxon.id, warehouseId: hyd.id, total: 10, reserved: 0 },
+      { productId: eroxon.id, warehouseId: mum.id, total: 8, reserved: 0 },
     ],
   });
 
-  // Hoodie stocks
+  // Testosterone Kit stocks
   await prisma.stock.createMany({
     data: [
-      { productId: hoodie.id, warehouseId: sf.id, total: 8, reserved: 0 },
-      { productId: hoodie.id, warehouseId: ny.id, total: 12, reserved: 0 },
-      { productId: hoodie.id, warehouseId: chi.id, total: 5, reserved: 0 },
+      { productId: testKit.id, warehouseId: blr.id, total: 5, reserved: 0 },
+      { productId: testKit.id, warehouseId: hyd.id, total: 8, reserved: 0 },
+      { productId: testKit.id, warehouseId: mum.id, total: 3, reserved: 0 },
     ],
   });
 
-  // Mouse stocks
+  // Tadalafil stocks
   await prisma.stock.createMany({
     data: [
-      { productId: mouse.id, warehouseId: sf.id, total: 1, reserved: 0 }, // Critical stock: test concurrency!
-      { productId: mouse.id, warehouseId: ny.id, total: 3, reserved: 0 },
-      { productId: mouse.id, warehouseId: chi.id, total: 2, reserved: 0 },
+      { productId: tadalafil.id, warehouseId: blr.id, total: 4, reserved: 0 },
+      { productId: tadalafil.id, warehouseId: hyd.id, total: 3, reserved: 0 },
+      { productId: tadalafil.id, warehouseId: mum.id, total: 1, reserved: 0 }, // Critical stock at Mumbai clinic for concurrency race condition testing!
     ],
   });
 
-  // Keyboard stocks
+  // Dapoxetine stocks
   await prisma.stock.createMany({
     data: [
-      { productId: kb.id, warehouseId: sf.id, total: 4, reserved: 0 },
-      { productId: kb.id, warehouseId: ny.id, total: 0, reserved: 0 }, // Out of stock
-      { productId: kb.id, warehouseId: chi.id, total: 6, reserved: 0 },
+      { productId: dapoxetine.id, warehouseId: blr.id, total: 8, reserved: 0 },
+      { productId: dapoxetine.id, warehouseId: hyd.id, total: 0, reserved: 0 }, // Out of stock
+      { productId: dapoxetine.id, warehouseId: mum.id, total: 6, reserved: 0 },
+    ],
+  });
+
+  // Libido Boost stocks
+  await prisma.stock.createMany({
+    data: [
+      { productId: libidoBoost.id, warehouseId: blr.id, total: 12, reserved: 0 },
+      { productId: libidoBoost.id, warehouseId: hyd.id, total: 15, reserved: 0 },
+      { productId: libidoBoost.id, warehouseId: mum.id, total: 10, reserved: 0 },
     ],
   });
 

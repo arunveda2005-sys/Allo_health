@@ -14,10 +14,17 @@ import {
   Database,
   Sparkles,
   ArrowRight,
-  TrendingDown,
   Info,
-  DollarSign,
-  ShoppingCart
+  ShoppingCart,
+  User,
+  Heart,
+  X,
+  SlidersHorizontal,
+  Wrench,
+  Check,
+  ShieldAlert,
+  ShieldCheck,
+  Truck
 } from "lucide-react";
 
 interface Stock {
@@ -63,14 +70,17 @@ function FadeIn({ children, delay = 0 }: FadeInProps) {
   const domRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.05 });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
 
     const currentTarget = domRef.current;
     if (currentTarget) {
@@ -97,7 +107,7 @@ function FadeIn({ children, delay = 0 }: FadeInProps) {
   );
 }
 
-export default function Dashboard() {
+export default function AlloHealthDashboard() {
   // Products & Warehouse state
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,6 +130,28 @@ export default function Dashboard() {
   const [testingIdempotency, setTestingIdempotency] = useState(false);
   const [cleaningUp, setCleaningUp] = useState(false);
   const [seeding, setSeeding] = useState(false);
+
+  // Dev Lab & Shopping Cart Open/Close states
+  const [isDevLabOpen, setIsDevLabOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Active Tab for Search filters: 'concern' or 'category'
+  const [searchTab, setSearchTab] = useState<"concern" | "category">("concern");
+
+  // Search filter values
+  const [healthConcern, setHealthConcern] = useState("");
+  const [treatmentRecommend, setTreatmentRecommend] = useState("");
+  const [symptomDuration, setSymptomDuration] = useState("");
+  const [pinCode, setPinCode] = useState("");
+  const [treatmentMode, setTreatmentMode] = useState("Home Medication Delivery");
+
+  const [wellnessCategory, setWellnessCategory] = useState("");
+  const [packagingSize, setPackagingSize] = useState("");
+  const [dosageStrength, setDosageStrength] = useState("");
+  const [discreetPackaging, setDiscreetPackaging] = useState(true);
+
+  // Search Results notification/visual highlight
+  const [searchFeedback, setSearchFeedback] = useState<string | null>(null);
 
   const consoleContainerRef = useRef<HTMLDivElement>(null);
 
@@ -148,7 +180,6 @@ export default function Dashboard() {
         const defaultQty: Record<string, number> = {};
         data.forEach((p: Product) => {
           if (p.stocks.length > 0) {
-            // Find first warehouse with stock, or default to first
             const availableWh = p.stocks.find(s => s.available > 0) || p.stocks[0];
             defaultWh[p.sku] = availableWh.warehouseId;
             defaultQty[p.sku] = 1;
@@ -178,7 +209,7 @@ export default function Dashboard() {
         console.error("Failed to parse local storage reservations");
       }
     }
-    addLog("Dashboard initialized. Ready to simulate inventory holds.");
+    addLog("Allo Health clinical fulfillment terminal initialized. Concurrency controls active.");
   }, []);
 
   // Save reservations to localstorage
@@ -197,7 +228,7 @@ export default function Dashboard() {
           const expiryTime = new Date(res.expiresAt).getTime();
           if (expiryTime <= now) {
             changed = true;
-            addLog(`Hold expired locally for reservation ${res.id.substring(0, 8)}...`);
+            addLog(`Checkout hold expired locally for reservation ${res.id.substring(0, 8)}...`);
             return { ...res, status: "EXPIRED" as const };
           }
         }
@@ -206,7 +237,6 @@ export default function Dashboard() {
 
       if (changed) {
         saveReservations(updated);
-        // Refresh products to reclaim stock levels
         fetchProducts(true);
       }
     }, 1000);
@@ -221,7 +251,7 @@ export default function Dashboard() {
     const quantity = reserveQuantity[sku] || 1;
     
     if (!warehouseId) {
-      alert("Please select a warehouse");
+      alert("Please select a clinic/warehouse");
       return;
     }
 
@@ -252,7 +282,6 @@ export default function Dashboard() {
       if (res.status === 201) {
         addLog(`Reservation successful! Hold ID: ${data.id.substring(0, 8)}`);
         
-        // Add to active holds list
         const newHold: LocalReservation = {
           id: data.id,
           productId: product.id,
@@ -266,11 +295,11 @@ export default function Dashboard() {
         };
 
         saveReservations([newHold, ...localReservations]);
+        setIsCartOpen(true);
         await fetchProducts(true);
       } else {
         addLog(`Reservation rejected (Status ${res.status}): ${data.error || JSON.stringify(data)}`);
         
-        // Add dummy entry to local list with error status so the user sees it failed
         const failedHold: LocalReservation = {
           id: `err-${Date.now()}`,
           productId: product.id,
@@ -285,6 +314,7 @@ export default function Dashboard() {
           errorMsg: data.error || "Stock conflict",
         };
         saveReservations([failedHold, ...localReservations]);
+        setIsCartOpen(true);
       }
     } catch (err: any) {
       addLog(`Network error during reservation: ${err.message}`);
@@ -296,7 +326,7 @@ export default function Dashboard() {
   // Confirm Purchase API Call
   const handleConfirm = async (hold: LocalReservation) => {
     setActionLoading(hold.id);
-    addLog(`Confirming payment for Hold ID: ${hold.id.substring(0, 8)}...`);
+    addLog(`Confirming payment for checkout hold: ${hold.id.substring(0, 8)}...`);
 
     try {
       const idempotencyKey = `confirm-${Math.random().toString(36).substring(2, 11)}-${Date.now()}`;
@@ -343,14 +373,13 @@ export default function Dashboard() {
   // Release/Cancel Hold API Call
   const handleRelease = async (hold: LocalReservation) => {
     if (hold.id.startsWith("err-")) {
-      // Just delete from UI if it was a failed reservation log
       const updated = localReservations.filter(r => r.id !== hold.id);
       saveReservations(updated);
       return;
     }
 
     setActionLoading(hold.id);
-    addLog(`Releasing hold early for Hold ID: ${hold.id.substring(0, 8)}...`);
+    addLog(`Releasing reservation early for Hold ID: ${hold.id.substring(0, 8)}...`);
 
     try {
       const idempotencyKey = `release-${Math.random().toString(36).substring(2, 11)}-${Date.now()}`;
@@ -389,13 +418,11 @@ export default function Dashboard() {
     }
   };
 
-  // Delete hold card from UI list
   const deleteFromUI = (id: string) => {
     const updated = localReservations.filter(r => r.id !== id);
     saveReservations(updated);
   };
 
-  // Clear local reservations UI history
   const clearHoldHistory = () => {
     saveReservations([]);
     addLog("UI hold history cleared.");
@@ -405,24 +432,23 @@ export default function Dashboard() {
   const runConcurrencyTest = async () => {
     if (products.length === 0) return;
     
-    // Find the at-home diagnostic kit (SKU: ALLO-HLTH-003)
-    const mouse = products.find(p => p.sku === "ALLO-HLTH-003");
-    if (!mouse) {
-      addLog("Error: Could not find at-home diagnostic kit for concurrency test.");
+    // Find Tadalafil 10mg Strip (SKU: ALO-003)
+    const tadalafil = products.find(p => p.sku === "ALO-003");
+    if (!tadalafil) {
+      addLog("Error: Could not find Tadalafil strip for concurrency test.");
       return;
     }
 
-    // Find San Francisco Hub stock
-    const sfStock = mouse.stocks.find(s => s.warehouseName === "San Francisco Hub");
-    if (!sfStock) {
-      addLog("Error: Could not find SF Hub stock for mouse.");
+    const mumbaiHub = tadalafil.stocks.find(s => s.warehouseName === "Borivali Fulfillment Centre");
+    if (!mumbaiHub) {
+      addLog("Error: Could not find Borivali clinic stock for Tadalafil.");
       return;
     }
 
-    if (sfStock.available === 0) {
+    if (mumbaiHub.available === 0) {
       addLog("--------------------------------------------------");
       addLog("❌ CANNOT RUN CONCURRENCY TEST: Stock available is 0.");
-      addLog("Please release the active hold in 'Active Checkout Holds' or click 'Seed Database' to restore available stock to 1 first.");
+      addLog("Please release active holds in Cart or click 'Seed Database' to restore stock first.");
       addLog("--------------------------------------------------");
       return;
     }
@@ -430,8 +456,8 @@ export default function Dashboard() {
     setTestingConcurrency(true);
     addLog("--------------------------------------------------");
     addLog("STARTING CONCURRENCY RACE CONDITION TEST");
-    addLog(`Target: 10 concurrent requests for last unit of ${mouse.name}`);
-    addLog(`Stock available before test: ${sfStock.available}`);
+    addLog(`Target: 10 concurrent requests for last unit of ${tadalafil.name}`);
+    addLog(`Stock available before test: ${mumbaiHub.available}`);
     addLog("Firing requests simultaneously...");
 
     const timestamp = Date.now();
@@ -444,8 +470,8 @@ export default function Dashboard() {
             "Idempotency-Key": `concurrency-ui-${idx}-${timestamp}`,
           },
           body: JSON.stringify({
-            productId: mouse.id,
-            warehouseId: sfStock.warehouseId,
+            productId: tadalafil.id,
+            warehouseId: mumbaiHub.warehouseId,
             quantity: 1,
           }),
         });
@@ -463,23 +489,23 @@ export default function Dashboard() {
       let conflictCount = 0;
       let otherCount = 0;
 
+      const holdsToAdd: LocalReservation[] = [];
+
       results.forEach((r, idx) => {
-        addLog(`Request #${idx + 1}: Status ${r.status} -> ${r.status === 201 ? "SUCCESS (Hold created: " + r.data.id.substring(0, 8) + ")" : "REJECTED (" + (r.data?.error || "Error") + ")"}`);
+        addLog(`Request #${idx + 1}: Status ${r.status} -> ${r.status === 201 ? "SUCCESS (Hold: " + r.data.id.substring(0, 8) + ")" : "REJECTED (" + (r.data?.error || "Error") + ")"}`);
         if (r.status === 201) {
           successCount++;
-          // Add this successful hold to local holds list so user can interact with it
-          const newHold: LocalReservation = {
+          holdsToAdd.push({
             id: r.data.id,
-            productId: mouse.id,
-            productName: mouse.name,
-            productSku: mouse.sku,
-            warehouseId: sfStock.warehouseId,
-            warehouseName: sfStock.warehouseName,
+            productId: tadalafil.id,
+            productName: tadalafil.name,
+            productSku: tadalafil.sku,
+            warehouseId: mumbaiHub.warehouseId,
+            warehouseName: mumbaiHub.warehouseName,
             quantity: 1,
             expiresAt: r.data.expiresAt,
             status: "PENDING",
-          };
-          setLocalReservations(prev => [newHold, ...prev]);
+          });
         }
         else if (r.status === 409) conflictCount++;
         else otherCount++;
@@ -487,14 +513,16 @@ export default function Dashboard() {
 
       addLog(`--- SUMMARY: Successes: ${successCount}, Conflicts: ${conflictCount}, Others: ${otherCount}`);
       if (successCount === 1) {
-        addLog("✅ RESULT: Concurrency protection active! Exactly 1 succeeded, others got 409.");
+        addLog("✅ RESULT: Concurrency lock active! Exactly 1 succeeded, others got 409.");
       } else {
         addLog("❌ RESULT: Race condition failed! Success count: " + successCount);
       }
       addLog("--------------------------------------------------");
 
-      // Persist the holds
-      localStorage.setItem("allo_reservations", JSON.stringify(localReservations));
+      if (holdsToAdd.length > 0) {
+        setLocalReservations(prev => [...holdsToAdd, ...prev]);
+        setIsCartOpen(true);
+      }
       await fetchProducts(true);
     } catch (err: any) {
       addLog(`Error running concurrency test: ${err.message}`);
@@ -507,15 +535,15 @@ export default function Dashboard() {
   const runIdempotencyTest = async () => {
     if (products.length === 0) return;
     
-    const hoodie = products.find(p => p.sku === "ALLO-HLTH-002");
-    if (!hoodie) {
-      addLog("Error: Could not find daily vitality supplement for idempotency test.");
+    const testKit = products.find(p => p.sku === "ALO-002");
+    if (!testKit) {
+      addLog("Error: Could not find Testosterone Test Kit for idempotency test.");
       return;
     }
 
-    const nyStock = hoodie.stocks.find(s => s.warehouseName === "New York Depot");
-    if (!nyStock) {
-      addLog("Error: Could not find New York Depot stock for hoodie.");
+    const hydHub = testKit.stocks.find(s => s.warehouseName === "Banjara Hills Dispatch Centre");
+    if (!hydHub) {
+      addLog("Error: Could not find Banjara Hills clinic stock.");
       return;
     }
 
@@ -527,8 +555,8 @@ export default function Dashboard() {
     addLog("Sending Request #1 and Request #2 in parallel...");
 
     const body = {
-      productId: hoodie.id,
-      warehouseId: nyStock.warehouseId,
+      productId: testKit.id,
+      warehouseId: hydHub.warehouseId,
       quantity: 1,
     };
 
@@ -564,16 +592,17 @@ export default function Dashboard() {
         if (res1.status === 201) {
           const newHold: LocalReservation = {
             id: data1.id,
-            productId: hoodie.id,
-            productName: hoodie.name,
-            productSku: hoodie.sku,
-            warehouseId: nyStock.warehouseId,
-            warehouseName: nyStock.warehouseName,
+            productId: testKit.id,
+            productName: testKit.name,
+            productSku: testKit.sku,
+            warehouseId: hydHub.warehouseId,
+            warehouseName: hydHub.warehouseName,
             quantity: 1,
             expiresAt: data1.expiresAt,
             status: "PENDING",
           };
           saveReservations([newHold, ...localReservations]);
+          setIsCartOpen(true);
         }
       } else {
         addLog("❌ RESULT: Idempotency failed. Mismatched responses or duplicate side effects.");
@@ -607,7 +636,6 @@ export default function Dashboard() {
     }
   };
 
-  // Format expiry countdown text
   const getCountdownText = (expiresAtStr: string) => {
     const remaining = Math.max(0, Math.floor((new Date(expiresAtStr).getTime() - Date.now()) / 1000));
     const mins = Math.floor(remaining / 60);
@@ -615,40 +643,103 @@ export default function Dashboard() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Calculate percentage of hold time remaining (assumes 10 minutes total)
-  const getTimerPercent = (expiresAtStr: string) => {
-    const remaining = Math.max(0, Math.floor((new Date(expiresAtStr).getTime() - Date.now()) / 1000));
-    return (remaining / 600) * 100;
+  // Handle Search Submission and display matched products
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTab === "concern") {
+      if (!healthConcern || !symptomDuration) {
+        alert("Please select concern area and duration.");
+        return;
+      }
+      setSearchFeedback(`Filtered for ${healthConcern} concern, shipping options checked for PIN ${pinCode || "560038"}.`);
+    } else {
+      if (!wellnessCategory) {
+        alert("Please specify wellness category.");
+        return;
+      }
+      setSearchFeedback(`Filtered for category: ${wellnessCategory}, checking local clinic hubs...`);
+    }
+    
+    setTimeout(() => {
+      setSearchFeedback(null);
+    }, 4500);
   };
 
+  const activeHoldsCount = localReservations.filter((r) => r.status === "PENDING").length;
+
   return (
-    <div className="min-h-screen bg-[#F9F8FC] text-zinc-900 font-sans selection:bg-[#D2F53C] selection:text-black pb-12">
-      {/* Navbar Header */}
-      <header className="border-b border-zinc-100 bg-white/80 backdrop-blur sticky top-0 z-50">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-[#E30613] selection:text-white pb-16 relative overflow-x-hidden">
+      
+      {/* Background radial highlights */}
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#E30613]/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-red-800/5 rounded-full blur-[150px] pointer-events-none" />
+
+      {/* Header Navigation */}
+      <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur sticky top-0 z-40 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-[#D2F53C] flex items-center justify-center text-black border border-[#BEDD35] shadow-sm">
-              <Package className="h-5 w-5" />
+            <div className="h-10 w-10 rounded-xl bg-[#E30613] flex items-center justify-center text-white shadow-lg shadow-red-900/20 rotate-3 hover:rotate-12 transition-transform duration-300">
+              <Truck className="h-5 w-5" />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-zinc-950">
-                Allo Fulfillment
+              <span className="text-xl font-black tracking-tight text-white flex items-center gap-1.5 font-sans italic">
+                ALLO <span className="text-[#E30613] not-italic font-extrabold text-sm tracking-widest bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">HEALTH</span>
               </span>
-              <span className="ml-2 px-2.5 py-0.5 text-[9px] font-bold tracking-wide uppercase bg-purple-100 text-purple-800 rounded-full">
-                Console v2.0
+              <span className="text-[9px] font-bold text-zinc-500 tracking-wider uppercase block">
+                Discreet Fulfillment Console
               </span>
             </div>
           </div>
 
+          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-zinc-400">
+            <a href="#" className="text-white border-b-2 border-[#E30613] pb-1 hover:text-white transition-colors">Treatments</a>
+            <a href="#" className="hover:text-white transition-colors">Consultations</a>
+            <a href="#" className="hover:text-white transition-colors">Therapy</a>
+            <a href="#" className="hover:text-white transition-colors">Diagnostics</a>
+          </nav>
+
           <div className="flex items-center gap-4">
+            {/* Developer Concurrency Lab Toggle */}
             <button
-              onClick={() => fetchProducts(true)}
-              disabled={refreshing}
-              className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-zinc-700 hover:text-black border border-zinc-200 hover:border-zinc-300 bg-zinc-50 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+              id="dev-lab-toggle"
+              onClick={() => setIsDevLabOpen(!isDevLabOpen)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border rounded-full transition-all cursor-pointer shadow-sm ${
+                isDevLabOpen
+                  ? "bg-[#E30613]/10 border-[#E30613] text-[#E30613] shadow-red-900/10"
+                  : "border-zinc-800 hover:border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white"
+              }`}
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-purple-600" : ""}`} />
-              Sync Inventory
+              <Sparkles className={`h-3.5 w-3.5 ${isDevLabOpen ? "animate-pulse" : ""}`} />
+              Fulfillment Lab
             </button>
+
+            {/* Cart / Checkout Holds toggle */}
+            <button
+              id="cart-drawer-toggle"
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm"
+              aria-label="Checkout Holds Cart"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {activeHoldsCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-[#E30613] text-white font-bold text-[10px] w-5 h-5 flex items-center justify-center rounded-full animate-bounce border-2 border-zinc-950">
+                  {activeHoldsCount}
+                </span>
+              )}
+            </button>
+
+            {/* User Profile Welcome (Hey, John red/black) */}
+            <div className="flex items-center gap-2 border-l border-zinc-800 pl-4">
+              <div className="h-8 w-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="hidden sm:block text-left">
+                <span className="text-[10px] text-zinc-500 font-bold block leading-none">SECURE ACCESS</span>
+                <span className="text-xs font-black tracking-wider text-white">
+                  HEY, <span className="text-[#E30613]">JOHN</span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -656,456 +747,140 @@ export default function Dashboard() {
       {/* Main Grid Workspace */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
-        {/* Zara Style Hero Editorial Banner */}
-        <FadeIn>
-          <div className="bg-[#EADEFF] rounded-3xl p-8 mb-8 border border-[#D9C4FA] relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
-            <div className="space-y-3.5 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#D2F53C] rounded-full text-[10px] font-bold uppercase tracking-wider text-black border border-[#BFDF33] shadow-sm">
-                ✨ Intimate health & daily vitality
+        {/* Dynamic fitment alert */}
+        {searchFeedback && (
+          <div className="bg-zinc-900 border-l-4 border-[#E30613] p-4 mb-6 rounded-r-2xl flex items-center justify-between gap-3 animate-slide-in">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-[#E30613]/10 flex items-center justify-center text-[#E30613]">
+                <Check className="h-4 w-4" />
               </div>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-zinc-955 leading-tight">
-                We&apos;re securing inventory for your health.
+              <div>
+                <p className="text-sm font-bold text-white">Search Parameter Applied</p>
+                <p className="text-xs text-zinc-400">{searchFeedback}</p>
+              </div>
+            </div>
+            <button onClick={() => setSearchFeedback(null)} className="text-zinc-500 hover:text-white cursor-pointer">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Zara-Style Intro Banner */}
+        <FadeIn>
+          <div className="bg-gradient-to-r from-zinc-900 via-zinc-900 to-red-950/20 rounded-3xl p-8 mb-8 border border-zinc-800 relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl">
+            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#E30613]/5 rounded-full blur-[80px] pointer-events-none" />
+            <div className="space-y-3.5 max-w-2xl relative z-10">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E30613]/10 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#E30613] border border-[#E30613]/20">
+                🛡️ DISCREET CLINICAL TREATMENT FULFILLMENT
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+                Secure your prescription and home testing kit.
               </h1>
-              <p className="text-sm text-zinc-800 leading-relaxed font-medium">
-                Allo&apos;s fulfillment platform coordinates stock allocations dynamically across localized depots using database locks. Checkout holds expire in 10 minutes to maintain active inventory flow.
+              <p className="text-sm text-zinc-400 leading-relaxed font-medium">
+                Allo Health coordinates discreet fulfillment across Indian metro clinics using pessimistic lock reservation algorithms. Your stock holds are guaranteed for 10 minutes before automated cleanup sweeping returns them to the clinic pool.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2.5 shrink-0">
-              <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">Intimate Care</span>
-              <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">At-Home Tests</span>
-              <span className="px-4 py-2 bg-white/70 backdrop-blur border border-purple-200/50 rounded-full text-xs font-bold text-purple-950 shadow-sm">Therapy</span>
+            <div className="flex flex-wrap gap-2 shrink-0 relative z-10">
+              <span className="px-4 py-2 bg-zinc-800 border border-zinc-700/50 rounded-full text-xs font-bold text-zinc-200">Doctor Consultation</span>
+              <span className="px-4 py-2 bg-zinc-800 border border-zinc-700/50 rounded-full text-xs font-bold text-zinc-200">Discreet Packing</span>
+              <span className="px-4 py-2 bg-zinc-800 border border-zinc-700/50 rounded-full text-xs font-bold text-zinc-200">Science-Backed</span>
             </div>
           </div>
         </FadeIn>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left Side: Product Inventory Listing (8 Cols) */}
-          <section className="lg:col-span-8 space-y-6">
-            <FadeIn>
-              <div>
-                <h2 className="text-2xl font-black text-zinc-950 tracking-tight">Active Stock Levels</h2>
-                <p className="text-sm text-zinc-500 mt-1 font-medium">
-                  Real-time stock totals and active customer reservation holds across warehouses.
-                </p>
-              </div>
-            </FadeIn>
-
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map((n) => (
-                  <div key={n} className="h-80 bg-zinc-100 animate-pulse rounded-3xl border border-zinc-200" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {products.map((product, idx) => {
-                  const sku = product.sku;
-                  const activeWhId = selectedWarehouse[sku];
-                  const activeWhStock = product.stocks.find((s) => s.warehouseId === activeWhId);
-                  const quantity = reserveQuantity[sku] || 1;
-
-                  return (
-                    <FadeIn key={product.id} delay={idx * 120}>
-                      <div
-                        className="bg-white border border-zinc-100 rounded-3xl overflow-hidden hover:border-zinc-200 hover:shadow-md transition-all flex flex-col group relative h-full"
-                      >
-                        {/* Price Tag Badge */}
-                        <div className="absolute top-4 right-4 bg-[#D2F53C] border border-[#BFDF33] text-black text-xs font-mono font-bold px-3.5 py-1 rounded-full shadow-sm z-10">
-                          ${product.price.toFixed(2)}
-                        </div>
-
-                        {/* Image / Banner */}
-                        <div className="h-52 bg-zinc-50 relative overflow-hidden flex items-center justify-center">
-                          {product.imageUrl ? (
-                            <img
-                              src={product.imageUrl}
-                              alt={product.name}
-                              className="object-cover w-full h-full opacity-90 group-hover:scale-105 transition-all duration-500"
-                            />
-                          ) : (
-                            <Package className="h-12 w-12 text-zinc-300" />
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent" />
-                        </div>
-
-                        {/* Metadata */}
-                        <div className="p-6 flex-1 flex flex-col">
-                          <div className="flex-1">
-                            <span className="text-[10px] font-bold tracking-wider text-purple-600 uppercase">
-                              SKU: {product.sku}
-                            </span>
-                            <h3 className="text-lg font-extrabold text-zinc-950 mt-1 group-hover:text-purple-700 transition-colors">
-                              {product.name}
-                            </h3>
-                            <p className="text-xs text-zinc-500 mt-2 line-clamp-2 leading-relaxed font-medium">
-                              {product.description || "No description provided."}
-                            </p>
-
-                            {/* Warehouses Stocks */}
-                            <div className="mt-5 space-y-3.5 border-t border-zinc-100 pt-4">
-                              <span className="text-xs font-bold text-zinc-800 block">Warehouse Allocation:</span>
-                              {product.stocks.map((stock) => {
-                                const available = stock.available;
-                                const isOut = available === 0;
-                                const isCritical = available > 0 && available <= 2;
-                                
-                                return (
-                                  <div key={stock.warehouseId} className="space-y-1.5">
-                                    <div className="flex justify-between text-xs font-semibold">
-                                      <div className="flex items-center gap-1.5 text-zinc-600">
-                                        <WarehouseIcon className="h-3.5 w-3.5 text-purple-600" />
-                                        <span>{stock.warehouseName}</span>
-                                      </div>
-                                      <div className="flex items-center gap-1 text-zinc-500">
-                                        <span>Avail:</span>
-                                        <span className={`font-mono font-bold ${
-                                          isOut ? "text-rose-500" : isCritical ? "text-amber-500" : "text-emerald-600"
-                                        }`}>
-                                          {available}
-                                        </span>
-                                        <span className="text-zinc-300">/</span>
-                                        <span className="text-zinc-500 font-mono text-[10px]">{stock.total}</span>
-                                      </div>
-                                    </div>
-
-                                    {/* Stock progress bar */}
-                                    <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden flex">
-                                      <div
-                                        style={{ width: `${(stock.available / Math.max(1, stock.total)) * 100}%` }}
-                                        className={`h-full rounded-full transition-all ${
-                                          isOut 
-                                            ? "bg-rose-500" 
-                                            : isCritical 
-                                              ? "bg-amber-400" 
-                                              : "bg-[#D2F53C]"
-                                        }`}
-                                      />
-                                      {stock.reserved > 0 && (
-                                        <div
-                                          style={{ width: `${(stock.reserved / Math.max(1, stock.total)) * 100}%` }}
-                                          className="h-full bg-purple-400 opacity-60"
-                                          title={`${stock.reserved} units currently reserved`}
-                                        />
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Checkout Simulation Controls */}
-                          <div className="mt-6 pt-5 border-t border-zinc-100 space-y-4">
-                            <div className="grid grid-cols-2 gap-3">
-                              {/* Warehouse Select */}
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">
-                                  Checkout Wh
-                                </label>
-                                <select
-                                  value={activeWhId || ""}
-                                  onChange={(e) =>
-                                    setSelectedWarehouse((prev) => ({ ...prev, [sku]: e.target.value }))
-                                  }
-                                  className="w-full bg-zinc-50 border border-zinc-200 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-xs text-zinc-800 rounded-xl px-3 py-2.5 cursor-pointer font-bold transition-all"
-                                >
-                                  {product.stocks.map((s) => (
-                                    <option key={s.warehouseId} value={s.warehouseId}>
-                                      {s.warehouseName}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              {/* Quantity Selector */}
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">
-                                  Quantity
-                                </label>
-                                <div className="flex bg-zinc-50 border border-zinc-200 rounded-xl overflow-hidden items-center justify-between">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setReserveQuantity((prev) => ({
-                                        ...prev,
-                                        [sku]: Math.max(1, (prev[sku] || 1) - 1),
-                                      }))
-                                    }
-                                    className="px-3 py-2 text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer font-bold"
-                                  >
-                                    -
-                                  </button>
-                                  <span className="text-xs font-mono font-bold text-zinc-900 px-2">
-                                    {quantity}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setReserveQuantity((prev) => ({
-                                        ...prev,
-                                        [sku]: (prev[sku] || 1) + 1,
-                                      }))
-                                    }
-                                    className="px-3 py-2 text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer font-bold"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Reserve CTA */}
-                            <button
-                              onClick={() => handleReserve(product)}
-                              disabled={reservingSku === sku || !activeWhStock || activeWhStock.available === 0}
-                              className="w-full py-3.5 px-4 bg-zinc-950 hover:bg-zinc-900 disabled:bg-zinc-100 text-white disabled:text-zinc-400 text-xs font-bold rounded-2xl transition-all shadow-sm active:scale-[0.98] disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-                            >
-                              {reservingSku === sku ? (
-                                <RefreshCw className="h-4 w-4 animate-spin text-white" />
-                              ) : activeWhStock?.available === 0 ? (
-                                "Out of Stock"
-                              ) : (
-                                <>
-                                  Proceed to Checkout
-                                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform text-[#D2F53C]" />
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </FadeIn>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          {/* Right Side: Active Holds Console & Testing Lab (4 Cols) */}
-          <aside className="lg:col-span-4 space-y-8">
-            
-            {/* Checkout Reservations Card */}
-            <FadeIn delay={200}>
-              <div className="bg-[#F3EEFF] border border-[#E2D5FA] rounded-3xl p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center text-purple-600 shadow-sm border border-purple-100">
-                    <ShoppingCart className="h-4 w-4" />
-                  </div>
-                  <h2 className="text-md font-extrabold text-purple-950">Active Holds</h2>
-                </div>
-                {localReservations.length > 0 && (
-                  <button
-                    onClick={clearHoldHistory}
-                    className="text-[10px] font-bold text-purple-600 hover:text-rose-600 transition-colors cursor-pointer"
-                  >
-                    Clear Logs
-                  </button>
-                )}
-              </div>
-
-              {localReservations.length === 0 ? (
-                <div className="border border-dashed border-[#DFD1FB] rounded-2xl py-12 px-6 text-center text-purple-500/80 bg-white/40">
-                  <Clock className="h-8 w-8 mx-auto text-purple-400 stroke-1 mb-3 animate-pulse" />
-                  <p className="text-xs font-bold">No active reservations.</p>
-                  <p className="text-[10px] text-purple-600 mt-2 leading-relaxed">
-                    Select a product and click &apos;Proceed to Checkout&apos; to trigger a 10-minute hold.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
-                  {localReservations.map((hold) => {
-                    const isPending = hold.status === "PENDING";
-                    const isConfirmed = hold.status === "CONFIRMED";
-                    const isReleased = hold.status === "RELEASED";
-                    const isExpired = hold.status === "EXPIRED";
-
-                    return (
-                      <div
-                        key={hold.id}
-                        className={`border rounded-2xl p-4 transition-all shadow-sm ${
-                          isConfirmed
-                            ? "bg-emerald-50/50 border-emerald-200/50 text-emerald-800"
-                            : isReleased
-                              ? "bg-zinc-50/50 border-zinc-200 text-zinc-500"
-                              : isExpired
-                                ? "bg-rose-50/50 border-rose-200/50 text-rose-800"
-                                : "bg-white border-purple-200/80 text-zinc-800"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start gap-2">
-                          <div>
-                            <span className="text-[9px] font-mono font-bold uppercase bg-zinc-100 border border-zinc-200 text-zinc-600 px-2 py-0.5 rounded">
-                              Hold: {hold.id.substring(0, 8)}
-                            </span>
-                            <h4 className="text-sm font-extrabold text-zinc-950 mt-2.5 leading-tight">
-                              {hold.productName}
-                            </h4>
-                            <p className="text-[10px] text-zinc-500 mt-1 flex items-center gap-1 font-semibold">
-                              <WarehouseIcon className="h-3 w-3 inline text-purple-600" />
-                              {hold.warehouseName}
-                            </p>
-                            <p className="text-xs font-bold mt-1 text-zinc-700">
-                              Quantity: <span className="font-mono text-purple-600">{hold.quantity}</span>
-                            </p>
-                          </div>
-
-                          {/* Status Badge & Circular Timer */}
-                          <div className="flex flex-col items-end gap-2">
-                            {isPending && (
-                              <div className="flex items-center gap-1.5 bg-amber-5 border border-amber-200 text-amber-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
-                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
-                                {getCountdownText(hold.expiresAt)}
-                              </div>
-                            )}
-
-                            {isConfirmed && (
-                              <div className="flex items-center gap-1 bg-emerald-5 border border-emerald-200 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
-                                <CheckCircle className="h-3.5 w-3.5" />
-                                Paid
-                              </div>
-                            )}
-
-                            {isReleased && (
-                              <div className="flex items-center gap-1 bg-zinc-100 border border-zinc-200 text-zinc-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
-                                <XCircle className="h-3.5 w-3.5" />
-                                Released
-                              </div>
-                            )}
-
-                            {isExpired && (
-                              <div className="flex items-center gap-1 bg-rose-5 border border-rose-200 text-rose-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
-                                <AlertCircle className="h-3.5 w-3.5" />
-                                Expired
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Display exact Errors from Server if they happen */}
-                        {hold.errorMsg && (
-                          <div className="mt-3 bg-rose-5 border border-rose-100 rounded-xl p-2.5 flex items-start gap-1.5 text-[10px] text-rose-700 font-medium leading-relaxed">
-                            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-rose-600" />
-                            <div>
-                              <span className="font-bold">Error {hold.statusCode}:</span> {hold.errorMsg}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Actions */}
-                        {isPending && (
-                          <div className="mt-4 grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => handleConfirm(hold)}
-                              disabled={actionLoading === hold.id}
-                              className="py-2.5 px-3 bg-[#D2F53C] hover:bg-[#C2DF32] disabled:bg-zinc-100 text-black disabled:text-zinc-400 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 shadow-sm border border-[#BFDF33]"
-                            >
-                              {actionLoading === hold.id ? (
-                                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                "Pay Now"
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleRelease(hold)}
-                              disabled={actionLoading === hold.id}
-                              className="py-2.5 px-3 bg-zinc-100 hover:bg-zinc-200 disabled:bg-zinc-100 text-zinc-700 hover:text-black disabled:text-zinc-400 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 border border-zinc-200 shadow-sm"
-                            >
-                              Cancel Hold
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Clean up logs from UI button */}
-                        {(isConfirmed || isReleased || isExpired) && (
-                          <div className="mt-3 flex justify-end">
-                            <button
-                              onClick={() => deleteFromUI(hold.id)}
-                              className="text-[9px] font-bold text-zinc-400 hover:text-zinc-600 cursor-pointer"
-                            >
-                              Remove Card
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            </FadeIn>
-
-            {/* Verification Lab Console */}
-            <FadeIn delay={350}>
-              <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-6">
+        {/* Developer Lab Drawer */}
+        {isDevLabOpen && (
+          <div className="mb-8 p-6 bg-zinc-900/90 border border-zinc-800 rounded-3xl shadow-2xl relative z-25 animate-fade-in">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-[#EADEFF] flex items-center justify-center text-purple-600 border border-purple-200">
+                <div className="h-8 w-8 rounded-lg bg-[#E30613]/10 flex items-center justify-center text-[#E30613]">
                   <Sparkles className="h-4 w-4" />
                 </div>
-                <h2 className="text-md font-extrabold text-zinc-950">Concurrency Lab</h2>
+                <div>
+                  <h2 className="text-md font-extrabold text-white">Clinical Concurrency & Locks Lab</h2>
+                  <p className="text-[11px] text-zinc-500 font-medium">Simulate transactional pressure and verify absolute isolation safety</p>
+                </div>
               </div>
+              <button
+                onClick={() => setIsDevLabOpen(false)}
+                className="p-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white cursor-pointer transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-              <div className="space-y-3.5">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Lab controls */}
+              <div className="lg:col-span-6 space-y-4">
                 {/* Concurrency Simulator */}
-                <div className="space-y-1">
-                  <button
-                    onClick={runConcurrencyTest}
-                    disabled={testingConcurrency || refreshing || loading}
-                    className="w-full py-3 px-4 bg-zinc-950 hover:bg-zinc-900 disabled:bg-zinc-100 disabled:text-zinc-400 text-[#D2F53C] disabled:border-zinc-200 text-xs font-bold rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    {testingConcurrency ? (
-                      <>
-                        <RefreshCw className="h-3.5 w-3.5 animate-spin text-white" />
-                        Testing Race Conditions...
-                      </>
-                    ) : (
-                      <>
+                <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs font-bold text-white block">Tadalafil Race Condition (Mumbai Clinic)</span>
+                      <span className="text-[10px] text-zinc-500 block mt-0.5 leading-normal">
+                        Fires 10 concurrent requests to reserve the last strip of Tadalafil at Borivali Fulfillment Centre.
+                      </span>
+                    </div>
+                    <button
+                      id="run-concurrency-test"
+                      onClick={runConcurrencyTest}
+                      disabled={testingConcurrency || refreshing || loading}
+                      className="px-4 py-2.5 bg-[#E30613] hover:bg-red-700 disabled:bg-zinc-800 text-white disabled:text-zinc-500 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow"
+                    >
+                      {testingConcurrency ? (
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
                         <Play className="h-3.5 w-3.5" />
-                        Test Concurrency (10 requests)
-                      </>
-                    )}
-                  </button>
-                  <p className="text-[10px] text-zinc-500 leading-normal px-1 font-semibold pt-1">
-                    Fires 10 concurrent requests to reserve the last unit of the At-Home Diagnostic Kit at SF Hub. Under concurrency, exactly 1 should get 201, and 9 should get 409.
-                  </p>
+                      )}
+                      Test Race
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-zinc-400 bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-800/80 font-medium">
+                    <span className="text-[#E30613] font-bold">Safeguard logic:</span> Pessimistic locking blocks concurrent reads during writes. Exactly 1 reservation is granted (<code className="text-emerald-400">201</code>), and 9 are denied (<code className="text-red-400">409</code>).
+                  </div>
                 </div>
 
                 {/* Idempotency Simulator */}
-                <div className="space-y-1 pt-2">
-                  <button
-                    onClick={runIdempotencyTest}
-                    disabled={testingIdempotency || refreshing || loading}
-                    className="w-full py-3 px-4 bg-white hover:bg-zinc-50 border border-zinc-300 hover:border-zinc-400 disabled:bg-zinc-100 disabled:text-zinc-400 text-zinc-800 disabled:border-zinc-200 text-xs font-bold rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    {testingIdempotency ? (
-                      <>
-                        <RefreshCw className="h-3.5 w-3.5 animate-spin text-purple-600" />
-                        Testing Idempotency...
-                      </>
-                    ) : (
-                      <>
-                        <Key className="h-3.5 w-3.5 text-purple-600" />
-                        Test Idempotency-Key
-                      </>
-                    )}
-                  </button>
-                  <p className="text-[10px] text-zinc-500 leading-normal px-1 font-semibold pt-1">
-                    Sends two simultaneous requests with an identical Idempotency-Key. Verifies that only one side-effect is recorded and both receive matching responses.
-                  </p>
+                <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs font-bold text-white block">Testosterone Kit Idempotency (Hyderabad clinic)</span>
+                      <span className="text-[10px] text-zinc-500 block mt-0.5 leading-normal">
+                        Sends simultaneous duplicate requests with matching transaction keys to reserve Testosterone Kit.
+                      </span>
+                    </div>
+                    <button
+                      id="run-idempotency-test"
+                      onClick={runIdempotencyTest}
+                      disabled={testingIdempotency || refreshing || loading}
+                      className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-900 border border-zinc-700 text-white disabled:text-zinc-600 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow"
+                    >
+                      {testingIdempotency ? (
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Key className="h-3.5 w-3.5" />
+                      )}
+                      Test Duplicate Keys
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-zinc-400 bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-800/80 font-medium">
+                    <span className="text-[#E30613] font-bold">Safeguard logic:</span> Unique request token tracking stops duplicate allocations. Both responses contain the identical reservation ID.
+                  </div>
                 </div>
 
-                {/* Database Cron and Utilities */}
-                <div className="grid grid-cols-2 gap-2 pt-2">
+                {/* Database Actions */}
+                <div className="grid grid-cols-2 gap-3">
                   <button
+                    id="trigger-sweep"
                     onClick={triggerManualSweep}
                     disabled={cleaningUp}
-                    className="py-2.5 px-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 hover:text-black text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                    className="py-3 px-4 bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Clock className="h-3.5 w-3.5 text-amber-500" />
                     Sweep Expirations
                   </button>
                   <button
+                    id="trigger-seed"
                     onClick={async () => {
                       setSeeding(true);
                       addLog("Triggering database re-seed...");
@@ -1126,7 +901,7 @@ export default function Dashboard() {
                       }
                     }}
                     disabled={seeding}
-                    className="py-2.5 px-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 hover:text-black text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                    className="py-3 px-4 bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Database className="h-3.5 w-3.5 text-blue-500" />
                     Seed Database
@@ -1134,23 +909,23 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Simulated terminal logging */}
-              <div className="space-y-2">
-                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Terminal Outputs:</span>
+              {/* Console Logs */}
+              <div className="lg:col-span-6 flex flex-col h-full">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-2">Live Console Stream:</span>
                 <div 
                   ref={consoleContainerRef}
-                  className="bg-[#18181B] border border-zinc-900 rounded-2xl p-4 h-48 overflow-y-auto font-mono text-[10px] text-zinc-300 space-y-1.5 shadow-inner"
+                  className="bg-[#09090b] border border-zinc-800 rounded-2xl p-4 h-[280px] overflow-y-auto font-mono text-[11px] text-zinc-300 space-y-1.5 shadow-inner"
                 >
                   {consoleLogs.map((log, idx) => (
                     <div key={idx} className="leading-relaxed break-all">
                       {log.startsWith("[") ? (
                         <>
-                          <span className="text-zinc-500">{log.substring(0, 10)}</span>
+                          <span className="text-zinc-600">{log.substring(0, 10)}</span>
                           <span className={
                             log.includes("✅") ? "text-emerald-400 font-bold" :
                             log.includes("❌") ? "text-rose-400 font-bold" :
-                            log.includes("successful") ? "text-[#D2F53C] font-semibold" :
-                            log.includes("expired") ? "text-amber-400" : "text-zinc-100"
+                            log.includes("successful") ? "text-[#E30613] font-semibold" :
+                            log.includes("expired") ? "text-amber-400" : "text-zinc-200"
                           }>
                             {log.substring(10)}
                           </span>
@@ -1163,10 +938,638 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Left Panel: Search Fitment Widget (4 Columns) */}
+          <section className="lg:col-span-4">
+            <FadeIn>
+              <div className="bg-zinc-900 border border-zinc-800/80 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[3px] bg-[#E30613]" />
+                
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className="h-8 w-8 rounded-lg bg-[#E30613]/10 flex items-center justify-center text-[#E30613]">
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-md font-extrabold text-white">Find Treatments</h2>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-0.5">Select fitting dimensions</p>
+                  </div>
+                </div>
+
+                {/* Switch Toggle Tab */}
+                <div className="bg-zinc-950 p-1 rounded-2xl flex items-center justify-between border border-zinc-800 mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setSearchTab("concern")}
+                    className={`flex-1 py-3 text-xs font-black tracking-wider uppercase rounded-xl transition-all cursor-pointer ${
+                      searchTab === "concern"
+                        ? "bg-[#E30613] text-white shadow-lg shadow-red-900/10"
+                        : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    Shop by concern
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchTab("category")}
+                    className={`flex-1 py-3 text-xs font-black tracking-wider uppercase rounded-xl transition-all cursor-pointer ${
+                      searchTab === "category"
+                        ? "bg-[#E30613] text-white shadow-lg shadow-red-900/10"
+                        : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    Shop by category
+                  </button>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleSearchSubmit} className="space-y-4">
+                  {searchTab === "concern" ? (
+                    <div className="space-y-4 transition-all">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Sexual Concern</label>
+                        <select
+                          value={healthConcern}
+                          onChange={(e) => setHealthConcern(e.target.value)}
+                          className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-200 text-xs font-bold rounded-xl px-3.5 py-3.5 focus:border-[#E30613] focus:ring-1 focus:ring-[#E30613] outline-none cursor-pointer transition-all"
+                        >
+                          <option value="">Select concern</option>
+                          <option value="Erectile Dysfunction (ED)">Erectile Dysfunction (ED)</option>
+                          <option value="Premature Ejaculation (PE)">Premature Ejaculation (PE)</option>
+                          <option value="Low Libido">Low Libido & Vitality</option>
+                          <option value="Relationship concerns">Relationship Concerns</option>
+                          <option value="General Wellness">General Wellness</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Assessment Mode</label>
+                        <select
+                          value={treatmentRecommend}
+                          onChange={(e) => setTreatmentRecommend(e.target.value)}
+                          className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-200 text-xs font-bold rounded-xl px-3.5 py-3.5 focus:border-[#E30613] focus:ring-1 focus:ring-[#E30613] outline-none cursor-pointer transition-all"
+                        >
+                          <option value="">Select recommendation</option>
+                          <option value="Doctor Consultation Needed">Doctor Consultation Needed</option>
+                          <option value="Self Assessment Only">Self Assessment Only</option>
+                          <option value="Home Screening Kit">Home Screening Kit</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Duration of Symptoms</label>
+                        <select
+                          value={symptomDuration}
+                          onChange={(e) => setSymptomDuration(e.target.value)}
+                          className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-200 text-xs font-bold rounded-xl px-3.5 py-3.5 focus:border-[#E30613] focus:ring-1 focus:ring-[#E30613] outline-none cursor-pointer transition-all"
+                        >
+                          <option value="">Select duration</option>
+                          <option value="Less than 3 months">Less than 3 months</option>
+                          <option value="3-6 months">3-6 months</option>
+                          <option value="6+ months">6+ months</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Delivery PIN Code</label>
+                        <input
+                          type="text"
+                          value={pinCode}
+                          onChange={(e) => setPinCode(e.target.value)}
+                          placeholder="Enter 6-digit PIN code (e.g. 560038)"
+                          className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-200 text-xs font-bold rounded-xl px-3.5 py-3.5 focus:border-[#E30613] focus:ring-1 focus:ring-[#E30613] outline-none transition-all placeholder:text-zinc-600"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Treatment Mode</label>
+                        <select
+                          value={treatmentMode}
+                          onChange={(e) => setTreatmentMode(e.target.value)}
+                          className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-200 text-xs font-bold rounded-xl px-3.5 py-3.5 focus:border-[#E30613] focus:ring-1 focus:ring-[#E30613] outline-none cursor-pointer transition-all"
+                        >
+                          <option value="Home Medication Delivery">Home Medication Delivery</option>
+                          <option value="Home Diagnostic Test">Home Diagnostic Test</option>
+                          <option value="Doctor Consultation + Delivery">Doctor Consultation + Delivery</option>
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 transition-all animate-fade-in">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Wellness Category</label>
+                        <select
+                          value={wellnessCategory}
+                          onChange={(e) => setWellnessCategory(e.target.value)}
+                          className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-200 text-xs font-bold rounded-xl px-3.5 py-3.5 focus:border-[#E30613] focus:ring-1 focus:ring-[#E30613] outline-none cursor-pointer transition-all"
+                        >
+                          <option value="">Select category</option>
+                          <option value="ED Treatment">ED Treatment</option>
+                          <option value="Diagnostic Kit">Diagnostic Kit</option>
+                          <option value="ED Medication">ED Medication</option>
+                          <option value="PE Medication">PE Medication</option>
+                          <option value="Wellness">Wellness Supplements</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Packaging Size</label>
+                        <select
+                          value={packagingSize}
+                          onChange={(e) => setPackagingSize(e.target.value)}
+                          className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-200 text-xs font-bold rounded-xl px-3.5 py-3.5 focus:border-[#E30613] focus:ring-1 focus:ring-[#E30613] outline-none cursor-pointer transition-all"
+                        >
+                          <option value="">Select size</option>
+                          <option value="Single Gel Tube">Single Pack / Gel Tube</option>
+                          <option value="10 tab Strip">Trial Strip (10 tabs)</option>
+                          <option value="30 tab Monthly Pack">Monthly supply (30 tabs)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Dosage Strength</label>
+                        <select
+                          value={dosageStrength}
+                          onChange={(e) => setDosageStrength(e.target.value)}
+                          className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-200 text-xs font-bold rounded-xl px-3.5 py-3.5 focus:border-[#E30613] focus:ring-1 focus:ring-[#E30613] outline-none cursor-pointer transition-all"
+                        >
+                          <option value="">Select dosage</option>
+                          <option value="Standard">Standard (10mg / 30mg)</option>
+                          <option value="Double Strength">Double Strength (20mg / 60mg)</option>
+                          <option value="Daily Vitality">Daily Vitality supplement</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Delivery PIN Code</label>
+                        <input
+                          type="text"
+                          value={pinCode}
+                          onChange={(e) => setPinCode(e.target.value)}
+                          placeholder="Enter 6-digit PIN code"
+                          className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-200 text-xs font-bold rounded-xl px-3.5 py-3.5 focus:border-[#E30613] focus:ring-1 focus:ring-[#E30613] outline-none transition-all placeholder:text-zinc-600"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Discreet Packaging Switch */}
+                  <div className="pt-2 border-t border-zinc-800 space-y-2">
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={discreetPackaging}
+                        onChange={(e) => setDiscreetPackaging(e.target.checked)}
+                        className="mt-1 accent-[#E30613]"
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-white flex items-center gap-1">
+                          Require 100% Discreet Packaging
+                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                        </span>
+                        <p className="text-[10px] text-zinc-500 mt-0.5 leading-normal">
+                          Shipped in plain brown unlabeled packaging without any mention of medication names or Allo Health.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full mt-4 py-4 bg-[#E30613] hover:bg-red-700 active:scale-[0.98] text-white text-xs font-black tracking-widest uppercase rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-red-950/25"
+                  >
+                    <span>View Results</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </form>
+              </div>
             </FadeIn>
-          </aside>
+          </section>
+
+          {/* Right Panel: Catalog Grid (8 Columns) */}
+          <section className="lg:col-span-8 space-y-6">
+            <FadeIn>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                    Official Treatments Catalog
+                    {refreshing && <RefreshCw className="h-4 w-4 animate-spin text-[#E30613]" />}
+                  </h2>
+                  <p className="text-xs text-zinc-400 mt-1 font-medium">
+                    Real-time stock totals and checkout locks across our regional clinic hubs.
+                  </p>
+                </div>
+
+                <button
+                  id="sync-inventory"
+                  onClick={() => fetchProducts(true)}
+                  disabled={refreshing}
+                  className="flex items-center gap-1.5 px-4 py-2 border border-zinc-800 hover:border-zinc-700 hover:text-white text-zinc-400 bg-zinc-900 rounded-xl text-xs font-semibold cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-[#E30613]" : ""}`} />
+                  Sync Stock
+                </button>
+              </div>
+            </FadeIn>
+
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <div key={n} className="h-[480px] bg-zinc-900 animate-pulse rounded-3xl border border-zinc-850" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {products.map((product, idx) => {
+                  const sku = product.sku;
+                  const activeWhId = selectedWarehouse[sku];
+                  const activeWhStock = product.stocks.find((s) => s.warehouseId === activeWhId);
+                  const quantity = reserveQuantity[sku] || 1;
+
+                  return (
+                    <FadeIn key={product.id} delay={idx * 100}>
+                      <div
+                        className="bg-zinc-900/90 border border-zinc-850 hover:border-zinc-700/80 rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-[#E30613]/5 transition-all flex flex-col group relative h-full"
+                      >
+                        {/* Price Badge */}
+                        <div className="absolute top-4 right-4 bg-[#E30613] text-white text-xs font-black px-3.5 py-1.5 rounded-xl shadow-lg z-10">
+                          ₹{product.price.toFixed(0)}
+                        </div>
+
+                        {/* Product Image */}
+                        <div className="h-56 bg-zinc-950 relative overflow-hidden flex items-center justify-center border-b border-zinc-850">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-all duration-500"
+                            />
+                          ) : (
+                            <Package className="h-12 w-12 text-zinc-700" />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 to-transparent opacity-70" />
+                          
+                          {/* Discreet Packaging Tag */}
+                          <div className="absolute bottom-4 left-4 bg-zinc-900/80 backdrop-blur border border-zinc-850 text-zinc-300 text-[9px] font-bold px-2 py-0.5 rounded flex items-center gap-1 z-10">
+                            <ShieldAlert className="h-3 w-3 text-emerald-400" />
+                            Discreet Packaging
+                          </div>
+                        </div>
+
+                        {/* Description & Actions */}
+                        <div className="p-6 flex-1 flex flex-col justify-between">
+                          <div className="space-y-4">
+                            <div>
+                              <span className="text-[10px] font-black tracking-widest text-[#E30613] uppercase bg-red-950/20 px-2 py-0.5 rounded border border-[#E30613]/10">
+                                SKU: {product.sku}
+                              </span>
+                              <h3 className="text-lg font-black text-white mt-2 group-hover:text-[#E30613] transition-colors leading-snug">
+                                {product.name}
+                              </h3>
+                              <p className="text-xs text-zinc-400 mt-2 line-clamp-2 leading-relaxed font-medium">
+                                {product.description || "Science-backed sexual health treatment."}
+                              </p>
+                            </div>
+
+                            {/* Warehouses list */}
+                            <div className="space-y-3 pt-3 border-t border-zinc-850">
+                              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Clinic Allocation:</span>
+                              {product.stocks.map((stock) => {
+                                const available = stock.available;
+                                const isOut = available === 0;
+                                const isCritical = available > 0 && available <= 2;
+                                
+                                return (
+                                  <div key={stock.warehouseId} className="space-y-1.5">
+                                    <div className="flex justify-between text-xs font-semibold">
+                                      <div className="flex items-center gap-1.5 text-zinc-300">
+                                        <WarehouseIcon className="h-3.5 w-3.5 text-[#E30613]" />
+                                        <span>{stock.warehouseName}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1 text-zinc-400">
+                                        <span>Avail:</span>
+                                        <span className={`font-mono font-bold ${
+                                          isOut ? "text-rose-500" : isCritical ? "text-amber-500" : "text-emerald-400"
+                                        }`}>
+                                          {available}
+                                        </span>
+                                        <span className="text-zinc-700">/</span>
+                                        <span className="text-zinc-500 font-mono text-[10px]">{stock.total}</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Custom Stock levels bar */}
+                                    <div className="h-2 w-full bg-zinc-950 rounded-full overflow-hidden flex border border-zinc-900">
+                                      <div
+                                        style={{ width: `${(stock.available / Math.max(1, stock.total)) * 100}%` }}
+                                        className={`h-full rounded-full transition-all ${
+                                          isOut 
+                                            ? "bg-rose-500" 
+                                            : isCritical 
+                                              ? "bg-amber-500" 
+                                              : "bg-[#E30613]"
+                                        }`}
+                                      />
+                                      {stock.reserved > 0 && (
+                                        <div
+                                          style={{ width: `${(stock.reserved / Math.max(1, stock.total)) * 100}%` }}
+                                          className="h-full bg-purple-500 opacity-70 border-l border-zinc-950"
+                                          title={`${stock.reserved} units reserved`}
+                                        />
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Reservation Checkout Panel */}
+                          <div className="mt-6 pt-5 border-t border-zinc-850 space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                              {/* Warehouse selection dropdown */}
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Fulfillment Hub</label>
+                                <select
+                                  value={activeWhId || ""}
+                                  onChange={(e) =>
+                                    setSelectedWarehouse((prev) => ({ ...prev, [sku]: e.target.value }))
+                                  }
+                                  className="w-full bg-zinc-950 border border-zinc-800 text-zinc-300 focus:border-[#E30613] text-xs rounded-xl px-2.5 py-2.5 cursor-pointer font-bold outline-none"
+                                >
+                                  {product.stocks.map((s) => (
+                                    <option key={s.warehouseId} value={s.warehouseId}>
+                                      {s.warehouseName.replace(" Fulfillment Hub", "").replace(" Dispatch Centre", "").replace(" Fulfillment Centre", "")} ({s.available} avail)
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Quantity Counter */}
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Quantity</label>
+                                <div className="flex bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden items-center justify-between h-9.5">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setReserveQuantity((prev) => ({
+                                        ...prev,
+                                        [sku]: Math.max(1, (prev[sku] || 1) - 1),
+                                      }))
+                                    }
+                                    className="px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors cursor-pointer font-extrabold"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="text-xs font-mono font-bold text-white px-1">
+                                    {quantity}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setReserveQuantity((prev) => ({
+                                        ...prev,
+                                        [sku]: (prev[sku] || 1) + 1,
+                                      }))
+                                    }
+                                    className="px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors cursor-pointer font-extrabold"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Checkout locking trigger */}
+                            <button
+                              id={`reserve-${sku}`}
+                              onClick={() => handleReserve(product)}
+                              disabled={reservingSku === sku || !activeWhStock || activeWhStock.available === 0}
+                              className="w-full py-3.5 px-4 bg-zinc-100 hover:bg-white disabled:bg-zinc-900 text-zinc-950 disabled:text-zinc-650 text-xs font-black tracking-wider uppercase rounded-2xl transition-all shadow active:scale-[0.98] disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              {reservingSku === sku ? (
+                                <RefreshCw className="h-4 w-4 animate-spin text-zinc-950" />
+                              ) : activeWhStock?.available === 0 ? (
+                                "Out of stock at Clinic Hub"
+                              ) : (
+                                <>
+                                  Reserve & Proceed to Consultation
+                                  <ArrowRight className="h-4.5 w-4.5 group-hover:translate-x-1 transition-transform text-[#E30613]" />
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </FadeIn>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </div>
       </main>
+
+      {/* Slide-out cart drawer for checkout holds */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 overflow-hidden">
+            <div 
+              onClick={() => setIsCartOpen(false)}
+              className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm transition-opacity duration-300" 
+              aria-hidden="true" 
+            />
+
+            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+              <div className="pointer-events-auto w-screen max-w-md transform bg-zinc-900 border-l border-zinc-800 p-6 shadow-2xl transition-transform duration-300 ease-in-out select-none">
+                <div className="flex flex-col h-full justify-between">
+                  <div>
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-zinc-800 pb-5">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg bg-[#E30613]/10 flex items-center justify-center text-[#E30613]">
+                          <ShoppingCart className="h-4 w-4" />
+                        </div>
+                        <h2 className="text-md font-extrabold text-white" id="slide-over-title">Clinical Holds Cart</h2>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {localReservations.length > 0 && (
+                          <button
+                            onClick={clearHoldHistory}
+                            className="text-[10px] font-bold text-zinc-500 hover:text-rose-500 transition-colors cursor-pointer"
+                          >
+                            Clear Logs
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setIsCartOpen(false)}
+                          className="p-1.5 bg-zinc-850 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white cursor-pointer transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Content List */}
+                    <div className="mt-6 flex-1 overflow-y-auto max-h-[calc(100vh-220px)] pr-1">
+                      {localReservations.length === 0 ? (
+                        <div className="border border-dashed border-zinc-800 rounded-2xl py-16 px-6 text-center text-zinc-500 bg-zinc-950/40">
+                          <Clock className="h-10 w-10 mx-auto text-[#E30613] stroke-1 mb-3 animate-pulse" />
+                          <p className="text-xs font-bold text-zinc-300">No active checkout holds.</p>
+                          <p className="text-[10px] text-zinc-500 mt-2 leading-relaxed max-w-[240px] mx-auto">
+                            Proceed to checkout on a product to trigger a concurrent-safe 10-minute clinic stock reservation lock.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {localReservations.map((hold) => {
+                            const isPending = hold.status === "PENDING";
+                            const isConfirmed = hold.status === "CONFIRMED";
+                            const isReleased = hold.status === "RELEASED";
+                            const isExpired = hold.status === "EXPIRED";
+
+                            return (
+                              <div
+                                key={hold.id}
+                                className={`border rounded-2xl p-4 transition-all shadow-md ${
+                                  isConfirmed
+                                    ? "bg-emerald-950/20 border-emerald-900/30 text-emerald-300"
+                                    : isReleased
+                                      ? "bg-zinc-950/30 border-zinc-800/80 text-zinc-500"
+                                      : isExpired
+                                        ? "bg-rose-950/20 border-rose-900/30 text-rose-300"
+                                        : "bg-zinc-950 border-zinc-800 text-zinc-300"
+                                }`}
+                              >
+                                <div className="flex justify-between items-start gap-2">
+                                  <div>
+                                    <span className="text-[9px] font-mono font-bold uppercase bg-zinc-900 border border-zinc-800 text-zinc-500 px-2 py-0.5 rounded">
+                                      LOCK: {hold.id.substring(0, 8)}
+                                    </span>
+                                    <h4 className="text-sm font-extrabold text-white mt-2.5 leading-tight">
+                                      {hold.productName}
+                                    </h4>
+                                    <p className="text-[10px] text-zinc-400 mt-1 flex items-center gap-1 font-semibold">
+                                      <WarehouseIcon className="h-3 w-3 inline text-[#E30613]" />
+                                      {hold.warehouseName}
+                                    </p>
+                                    <p className="text-xs font-bold mt-1.5 text-zinc-300">
+                                      Quantity: <span className="font-mono text-[#E30613]">{hold.quantity}</span>
+                                    </p>
+                                    {discreetPackaging && (
+                                      <p className="text-[9px] text-emerald-400 mt-1 flex items-center gap-1 font-semibold">
+                                        <ShieldCheck className="h-3 w-3" />
+                                        Unlabeled Packaging Active
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {/* Badges & Timer */}
+                                  <div className="flex flex-col items-end gap-2 shrink-0">
+                                    {isPending && (
+                                      <div className="flex items-center gap-1.5 bg-amber-950/30 border border-amber-900/40 text-amber-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
+                                        {getCountdownText(hold.expiresAt)}
+                                      </div>
+                                    )}
+
+                                    {isConfirmed && (
+                                      <div className="flex items-center gap-1 bg-emerald-950/30 border border-emerald-900/40 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                                        <CheckCircle className="h-3.5 w-3.5" />
+                                        Confirmed
+                                      </div>
+                                    )}
+
+                                    {isReleased && (
+                                      <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 text-zinc-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                                        <XCircle className="h-3.5 w-3.5" />
+                                        Released
+                                      </div>
+                                    )}
+
+                                    {isExpired && (
+                                      <div className="flex items-center gap-1 bg-rose-950/30 border border-rose-900/40 text-rose-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                                        <AlertCircle className="h-3.5 w-3.5" />
+                                        Expired
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {hold.errorMsg && (
+                                  <div className="mt-3 bg-rose-950/30 border border-rose-900/30 rounded-xl p-2.5 flex items-start gap-1.5 text-[10px] text-rose-400 font-medium leading-relaxed">
+                                    <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-rose-500" />
+                                    <div>
+                                      <span className="font-bold">Error {hold.statusCode}:</span> {hold.errorMsg}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                {isPending && (
+                                  <div className="mt-4 grid grid-cols-2 gap-2">
+                                    <button
+                                      onClick={() => handleConfirm(hold)}
+                                      disabled={actionLoading === hold.id}
+                                      className="py-2 px-3 bg-[#E30613] hover:bg-red-700 disabled:bg-zinc-800 text-white disabled:text-zinc-650 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 border border-red-800 shadow"
+                                    >
+                                      {actionLoading === hold.id ? (
+                                        <RefreshCw className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        "Confirm Order"
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={() => handleRelease(hold)}
+                                      disabled={actionLoading === hold.id}
+                                      className="py-2 px-3 bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-950 text-zinc-400 hover:text-white disabled:text-zinc-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 border border-zinc-800 shadow"
+                                    >
+                                      Cancel Hold
+                                    </button>
+                                  </div>
+                                )}
+
+                                {(isConfirmed || isReleased || isExpired) && (
+                                  <div className="mt-3 flex justify-end">
+                                    <button
+                                      onClick={() => deleteFromUI(hold.id)}
+                                      className="text-[9px] font-bold text-zinc-500 hover:text-zinc-355 cursor-pointer"
+                                    >
+                                      Remove Log
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Drawer summary */}
+                  <div className="border-t border-zinc-800 pt-5 mt-5">
+                    <div className="flex justify-between text-sm font-semibold text-zinc-400 mb-4">
+                      <span>Total Active Reservations</span>
+                      <span className="text-white font-mono">{activeHoldsCount}</span>
+                    </div>
+                    <button
+                      onClick={() => setIsCartOpen(false)}
+                      className="w-full py-3.5 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
+                    >
+                      Back to Treatments
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

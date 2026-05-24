@@ -21,22 +21,22 @@ async function runTest() {
   }
   const products = await res.json();
 
-  const mouse = products.find((p: any) => p.sku === "ALLO-HLTH-003");
-  if (!mouse) {
-    throw new Error("Could not find at-home diagnostic kit in seeded products!");
+  const tadalafil = products.find((p: any) => p.sku === "ALO-003");
+  if (!tadalafil) {
+    throw new Error("Could not find Tadalafil strip in seeded products!");
   }
 
-  const sfStock = mouse.stocks.find((s: any) => s.warehouseName === "San Francisco Hub");
-  if (!sfStock) {
-    throw new Error("Could not find San Francisco Hub stock for the diagnostic kit!");
+  const mumStock = tadalafil.stocks.find((s: any) => s.warehouseName === "Borivali Fulfillment Centre");
+  if (!mumStock) {
+    throw new Error("Could not find Borivali Fulfillment Centre stock for Tadalafil!");
   }
 
-  console.log(`Found Product: ${mouse.name} (${mouse.id})`);
-  console.log(`SF Hub Stock - Total: ${sfStock.total}, Reserved: ${sfStock.reserved}, Available: ${sfStock.available}`);
+  console.log(`Found Product: ${tadalafil.name} (${tadalafil.id})`);
+  console.log(`Mumbai Stock - Total: ${mumStock.total}, Reserved: ${mumStock.reserved}, Available: ${mumStock.available}`);
 
-  if (sfStock.available !== 1) {
-    console.log(`\nNOTE: Available stock is ${sfStock.available}. Testing will request 1 unit.`);
-    if (sfStock.available === 0) {
+  if (mumStock.available !== 1) {
+    console.log(`\nNOTE: Available stock is ${mumStock.available}. Testing will request 1 unit.`);
+    if (mumStock.available === 0) {
       console.log("No stock available. Let's trigger a cleanup or database reset before testing.");
       console.log("Attempting to run database cleanup...");
       const cleanRes = await fetch(`${BASE_URL}/api/cron/cleanup`);
@@ -46,9 +46,9 @@ async function runTest() {
       // Re-fetch products
       const pRes = await fetch(`${BASE_URL}/api/products`);
       const pData = await pRes.json();
-      const updatedMouse = pData.find((p: any) => p.sku === "ALLO-HLTH-003");
-      const updatedSfStock = updatedMouse.stocks.find((s: any) => s.warehouseName === "San Francisco Hub");
-      console.log(`Updated Available Stock: ${updatedSfStock.available}`);
+      const updatedTadalafil = pData.find((p: any) => p.sku === "ALO-003");
+      const updatedMumStock = updatedTadalafil.stocks.find((s: any) => s.warehouseName === "Borivali Fulfillment Centre");
+      console.log(`Updated Available Stock: ${updatedMumStock.available}`);
     }
   }
 
@@ -65,8 +65,8 @@ async function runTest() {
           "Idempotency-Key": `concurrency-test-key-${idx}-${Date.now()}`,
         },
         body: JSON.stringify({
-          productId: mouse.id,
-          warehouseId: sfStock.warehouseId,
+          productId: tadalafil.id,
+          warehouseId: mumStock.warehouseId,
           quantity: 1,
         }),
       });

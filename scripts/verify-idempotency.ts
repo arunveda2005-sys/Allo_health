@@ -21,18 +21,18 @@ async function runTest() {
   }
   const products = await res.json();
 
-  const hoodie = products.find((p: any) => p.sku === "ALLO-HLTH-002");
-  if (!hoodie) {
-    throw new Error("Could not find daily vitality supplement in seeded products!");
+  const testKit = products.find((p: any) => p.sku === "ALO-002");
+  if (!testKit) {
+    throw new Error("Could not find Testosterone Test Kit in seeded products!");
   }
 
-  const nyStock = hoodie.stocks.find((s: any) => s.warehouseName === "New York Depot");
-  if (!nyStock) {
-    throw new Error("Could not find New York Depot stock for the supplement!");
+  const hydStock = testKit.stocks.find((s: any) => s.warehouseName === "Banjara Hills Dispatch Centre");
+  if (!hydStock) {
+    throw new Error("Could not find Banjara Hills Dispatch Centre stock for the test kit!");
   }
 
-  console.log(`Found Product: ${hoodie.name} (${hoodie.id})`);
-  console.log(`NY Depot Stock - Total: ${nyStock.total}, Reserved: ${nyStock.reserved}, Available: ${nyStock.available}`);
+  console.log(`Found Product: ${testKit.name} (${testKit.id})`);
+  console.log(`Hyderabad Stock - Total: ${hydStock.total}, Reserved: ${hydStock.reserved}, Available: ${hydStock.available}`);
 
   // Generate a random key
   const idempotencyKey = `idemp-test-key-${Math.random().toString(36).substring(2, 15)}-${Date.now()}`;
@@ -41,8 +41,8 @@ async function runTest() {
   // 2. Fire two reservation requests simultaneously
   console.log("\nFiring two reservation requests simultaneously...");
   const body = {
-    productId: hoodie.id,
-    warehouseId: nyStock.warehouseId,
+    productId: testKit.id,
+    warehouseId: hydStock.warehouseId,
     quantity: 1,
   };
 

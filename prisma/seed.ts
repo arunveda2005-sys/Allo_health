@@ -53,7 +53,7 @@ async function main() {
       description: "Easy-to-use, lab-verified home blood collection kit measuring total testosterone levels with secure, discreet digital results.",
       sku: "ALO-002",
       price: 1499.00,
-      imageUrl: "https://images.unsplash.com/photo-1619014029026-b1fd7551aa12?q=80&w=300&auto=format&fit=crop",
+      imageUrl: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?q=80&w=300&auto=format&fit=crop",
     },
   });
 
